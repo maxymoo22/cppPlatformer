@@ -76,8 +76,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\Users\Max\Documents\stuff of max\VSPrograms\CppPlatformer\box2d;C:\Users\Max\Documents\stuff of max\VSPrograms\SDL2-headers\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\Max\Documents\stuff of max\VSPrograms\CppPlatformer\lib;C:\Users\Max\Documents\stuff of max\VSPrograms\SDL2-headers\lib\x64;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\Max\Documents\stuff of max\VSPrograms\CppPlatformer\external_libraries\SDL2\include;C:\Users\Max\Documents\stuff of max\VSPrograms\CppPlatformer\external_libraries\tmxlite\include;C:\Users\Max\Documents\stuff of max\VSPrograms\CppPlatformer\external_libraries\box2d\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\Max\Documents\stuff of max\VSPrograms\CppPlatformer\external_libraries\SDL2\lib;C:\Users\Max\Documents\stuff of max\VSPrograms\CppPlatformer\external_libraries\tmxlite\lib;C:\Users\Max\Documents\stuff of max\VSPrograms\CppPlatformer\external_libraries\box2d\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -106,13 +106,13 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\Max\Documents\stuff of max\VSPrograms\tmxlite-files\tmxlite-master\tmxlite\include;C:\Users\Max\Documents\stuff of max\VSPrograms\CppPlatformer\box2d;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Users\Max\Documents\stuff of max\VSPrograms\tmxlite-files\tmxlite-master\tmxlite\x64\bin\DebugStatic;C:\Users\Max\Documents\stuff of max\VSPrograms\CppPlatformer\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>box2d.lib;SDL2.lib;SDL2main.lib;SDL2_image.lib;libtmxlite-s-d.lib;SDL2_ttf.lib;SDL2_mixer.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
