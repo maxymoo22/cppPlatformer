@@ -76,8 +76,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\Users\Max\Documents\stuff of max\VSPrograms\CppPlatformer\external_libraries\SDL2\include;C:\Users\Max\Documents\stuff of max\VSPrograms\CppPlatformer\external_libraries\tmxlite\include;C:\Users\Max\Documents\stuff of max\VSPrograms\CppPlatformer\external_libraries\box2d\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\Max\Documents\stuff of max\VSPrograms\CppPlatformer\external_libraries\SDL2\lib;C:\Users\Max\Documents\stuff of max\VSPrograms\CppPlatformer\external_libraries\tmxlite\lib;C:\Users\Max\Documents\stuff of max\VSPrograms\CppPlatformer\external_libraries\box2d\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>./external_libraries/SDL2/include;./external_libraries/tmxlite/include;./external_libraries/box2d/include;$(IncludePath)</IncludePath>
+    <LibraryPath>./external_libraries/SDL2/lib;./external_libraries/tmxlite/lib;./external_libraries/box2d/lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>

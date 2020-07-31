@@ -198,7 +198,6 @@ void GameLevel::createHitboxes(b2World* world) {
 
 			// If this button didn't have a platform ID we can skip it
 			if (platformID < 0) continue;
-			cout << "Just a check\n";
 		}
 
 		b2BodyDef tileBodyDef;
@@ -222,29 +221,24 @@ void GameLevel::createHitboxes(b2World* world) {
 		delete[] chainPoints;
 		chainPoints = NULL;
 
+		b2FixtureDef fixtureDef;
+		fixtureDef.shape = &collisionShape;
+
 		// If it's a ladder, finish point or button then we need to make it a sensor so the player doesn't get blocked
 		if (object.getType() == "ladder" || object.getType() == "finish" || object.getType() == "button") {
-			b2FixtureDef fixtureDef;
 			fixtureDef.isSensor = true;
-			fixtureDef.shape = &collisionShape;
-
-			// Now we bind the shape to the body with a fixture
-			tileBody->CreateFixture(&fixtureDef);
-
 			// Very messy ternaries. Oh well. The math for the button user data is a way to store 2 numbers in 1.
-			tileBody->SetUserData(object.getType() == "ladder" ? (void*)LADDER : object.getType() == "finish" ? (void*)FINISH_POINT : (void*)(BUTTON * 1000000 + platformID));
+			fixtureDef.userData = object.getType() == "ladder" ? (void*)LADDER : object.getType() == "finish" ? (void*)FINISH_POINT : (void*)(BUTTON * 1000000 + platformID);
 		}
 
-		else {
+		else if(object.getType() == "danger") {
 			// If the tile is dangerous, then we need to add some user data so the collision handler knows
-			if (object.getType() == "danger")
-				tileBody->SetUserData((void*)DANGEROUS_TILE);
-			tileBody->CreateFixture(&collisionShape, 0.0);
+			fixtureDef.userData = (void*)DANGEROUS_TILE;
 		}
-	}
 
-	cout << "Entity vector length: " << entities.size() << endl;
-	cout << "Moving platform vector length: " << movingPlatforms.size() << endl;
+		// Now we bind the shape to the body with a fixture
+		tileBody->CreateFixture(&fixtureDef);
+	}
 }
 
 void GameLevel::createEntity(tmx::Object* entityObject, b2World* world, bool movingPlatform) {
@@ -335,6 +329,7 @@ void GameLevel::createEntity(tmx::Object* entityObject, b2World* world, bool mov
 	fixtureDef.shape = &collisionShape;
 	fixtureDef.density = 1.0;
 	fixtureDef.friction = 5.0;
+	fixtureDef.userData = movingPlatform ? (void*)MOVING_PLATFORM : (void*)ENTITY;
 	entityBody->CreateFixture(&fixtureDef);
 
 	delete[] chainPoints;
@@ -356,8 +351,6 @@ void GameLevel::createEntity(tmx::Object* entityObject, b2World* world, bool mov
 			entityBody->SetLinearVelocity(b2Vec2(MPVelocity.x, MPVelocity.y));
 		}
 
-		entityBody->SetUserData((void*)MOVING_PLATFORM);
-		cout << "Inserting moving platform with UID: " << (int)entityObject->getUID() << endl;
 		movingPlatforms.insert(make_pair((int)entityObject->getUID(), movingPlatform));
 	}
 	else {

@@ -15,6 +15,7 @@
 #define FINISH_POINT 5
 #define MOVING_PLATFORM 6
 #define BUTTON 7
+#define ENTITY 8
 
 using namespace std;
 
@@ -37,8 +38,7 @@ public:
 	int playerFinishPointContacts = 0;
 
 	// For moving platforms
-	int playerMPContacts = 0;
-	vector<b2Body*> movingPlatforms;
+	set<b2Body*> movingPlatforms;
 
 	// This will hold all of the entities that the player is standing on. It is needed because we want to apply impulses to the entities when the player moves.
 	// This will also hold the ground fixtures but they won't react to forces anyway

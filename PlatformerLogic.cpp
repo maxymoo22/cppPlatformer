@@ -295,7 +295,6 @@ void Platformer::createPhysics() {
 	playerBodyDef.type = b2_dynamicBody;
 	playerBodyDef.fixedRotation = true;
 	playerBodyDef.position.Set(3.5, 2.5);
-	playerBodyDef.userData = (void*)PLAYER_BODY;
 	playerBody = physicsWorld->CreateBody(&playerBodyDef);
 
 	// Create the players collision shape
@@ -308,6 +307,7 @@ void Platformer::createPhysics() {
 	playerFixture.shape = &collisionShape;
 	playerFixture.density = 1.0;
 	playerFixture.friction = 0.0;
+	playerFixture.userData = (void*)PLAYER_BODY;
 	playerBody->CreateFixture(&playerFixture);
 
 	// This will be a sensor fixture. It will detect if the player is touching the ground

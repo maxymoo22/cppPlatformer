@@ -14,130 +14,96 @@ void CollisionListener::clear() {
 	playerDangerContacts = 0;
 	playerLadderContacts = 0;
 	playerFinishPointContacts = 0;
-	playerMPContacts = 0;
 
-	// These 3 need to be reset because they are per-level based
+	// These 4 need to be reset because they are per-level based
 	movingPlatforms.clear();
 	buttons.clear();
+	entityFixturesUnderfoot.clear();
 	playerBody = NULL;
 }
 
 void CollisionListener::BeginContact(b2Contact* contact) {
-	// These two check if the player touches a moving platform. If so, we need to find the correct body and add it to the vector.
-	// It will then be used to get the velocity, which will be added to the players velocity to stop them falling of the platform when not moving
-	if ((int)(contact->GetFixtureA()->GetUserData()) == PLAYER_SENSOR && (int)(contact->GetFixtureB()->GetBody()->GetUserData()) == MOVING_PLATFORM) {
-		playerMPContacts++;
-		movingPlatforms.push_back(contact->GetFixtureB()->GetBody());
-	}
+	// Store the type of fixture. There are 8 possible values defined in Box2dOverrides.h
+	int fixtureAData = (int)contact->GetFixtureA()->GetUserData();
+	int fixtureBData = (int)contact->GetFixtureB()->GetUserData();
 
-	if ((int)(contact->GetFixtureB()->GetUserData()) == PLAYER_SENSOR && (int)(contact->GetFixtureA()->GetBody()->GetUserData()) == MOVING_PLATFORM) {
-		playerMPContacts++;
-		movingPlatforms.push_back(contact->GetFixtureA()->GetBody());
-	}
-	/////////////////////////
+	// We need to know what moving platforms the player is on so we can add to the velocity. This stops the player from sliding off
+	if (fixtureAData == PLAYER_SENSOR && fixtureBData == MOVING_PLATFORM)
+		movingPlatforms.insert(contact->GetFixtureB()->GetBody());
+	else if (fixtureAData == MOVING_PLATFORM && fixtureBData == PLAYER_SENSOR)
+		movingPlatforms.insert(contact->GetFixtureA()->GetBody());
 
+	// All of the basics, checks for collisions with ladders, things that kill the player and the end of the level
+	if (fixtureAData == LADDER && fixtureBData == PLAYER_BODY || fixtureBData == LADDER && fixtureAData == PLAYER_BODY)
+		playerLadderContacts++;
+	else if (fixtureAData == DANGEROUS_TILE && fixtureBData == PLAYER_BODY || fixtureBData == DANGEROUS_TILE && fixtureAData == PLAYER_BODY)
+		playerDangerContacts++;
+	else if (fixtureAData == FINISH_POINT && fixtureBData == PLAYER_BODY || fixtureBData == FINISH_POINT && fixtureAData == PLAYER_BODY)
+		playerFinishPointContacts++;
 
-	// If one of the fixtures is the player's sensor colliding with something, then the player must now be on the ground
-	if ((int)(contact->GetFixtureA()->GetUserData()) == PLAYER_SENSOR && (int)(contact->GetFixtureB()->GetBody()->GetUserData()) != LADDER && (int)(contact->GetFixtureB()->GetBody()->GetUserData()) != FINISH_POINT && (int)(contact->GetFixtureB()->GetBody()->GetUserData()) != DANGEROUS_TILE ||
-		(int)(contact->GetFixtureB()->GetUserData()) == PLAYER_SENSOR && (int)(contact->GetFixtureA()->GetBody()->GetUserData()) != LADDER && (int)(contact->GetFixtureA()->GetBody()->GetUserData()) != FINISH_POINT && (int)(contact->GetFixtureA()->GetBody()->GetUserData()) != DANGEROUS_TILE) {
+	// As long as it's not the player's foot sensor, if something touches a button we need to know so we can activate the platform it's linked to
+	else if (fixtureAData != PLAYER_SENSOR && fixtureBData / 1000000 == BUTTON)
+		buttons[fixtureBData - BUTTON * 1000000]++;
+	else if (fixtureAData / 1000000 == BUTTON && fixtureBData != PLAYER_SENSOR)
+		buttons[fixtureAData - BUTTON * 1000000]++;
+
+	// Finally, we need to know when the player is on the ground. This stops them from jumping in mid air and flying around
+	if (fixtureAData == PLAYER_SENSOR && fixtureBData != LADDER && fixtureBData != DANGEROUS_TILE && fixtureBData != FINISH_POINT && fixtureBData != BUTTON ||
+		fixtureBData == PLAYER_SENSOR && fixtureAData != LADDER && fixtureAData != DANGEROUS_TILE && fixtureAData != FINISH_POINT && fixtureAData != BUTTON) {
 		playerGroundContacts++;
-		
-		// This checks if fixture A is the ground/entity
-		if ((int)(contact->GetFixtureA()->GetUserData()) != PLAYER_SENSOR)
+
+		// If fixture A is an entity, then we need to add it to the entity list. This will then be used to apply a kickback to it when the player walks
+		if (fixtureAData == ENTITY)
 			entityFixturesUnderfoot.insert(contact->GetFixtureA());
-		// Otherwise fixture it will be fixture B
-		else
+		// Same thing if the entity is fixture B instead
+		else if (fixtureBData == ENTITY)
 			entityFixturesUnderfoot.insert(contact->GetFixtureB());
 	}
 
-	// Checking for collisions with dangerous tiles
-	else if ((int)(contact->GetFixtureA()->GetBody()->GetUserData()) == DANGEROUS_TILE && (int)(contact->GetFixtureB()->GetUserData()) != PLAYER_SENSOR ||
-			 (int)(contact->GetFixtureB()->GetBody()->GetUserData()) == DANGEROUS_TILE && (int)(contact->GetFixtureA()->GetUserData()) != PLAYER_SENSOR) {
-		playerDangerContacts++;
-	}
-
-	else if ((int)(contact->GetFixtureA()->GetBody()->GetUserData()) == LADDER && (int)(contact->GetFixtureB()->GetUserData()) != PLAYER_SENSOR ||
-			 (int)(contact->GetFixtureB()->GetBody()->GetUserData()) == LADDER && (int)(contact->GetFixtureA()->GetUserData()) != PLAYER_SENSOR) {
-		playerLadderContacts++;
-	}
-
-	else if ((int)(contact->GetFixtureA()->GetBody()->GetUserData()) == FINISH_POINT && (int)(contact->GetFixtureB()->GetUserData()) != PLAYER_SENSOR ||
-			 (int)(contact->GetFixtureB()->GetBody()->GetUserData()) == FINISH_POINT && (int)(contact->GetFixtureA()->GetUserData()) != PLAYER_SENSOR) {
-		playerFinishPointContacts++;
-	}
-	
-	else if ((int)(contact->GetFixtureA()->GetBody()->GetUserData()) != PLAYER_SENSOR && (int)(contact->GetFixtureB()->GetBody()->GetUserData()) / 1000000 == BUTTON) {
-		cout << "Contact with button. Platform id: " << (int)(contact->GetFixtureB()->GetBody()->GetUserData()) - 7000000 << endl;
-		buttons[(int)(contact->GetFixtureB()->GetBody()->GetUserData()) - 7000000]++;
-	}
-
-	else if ((int)(contact->GetFixtureB()->GetBody()->GetUserData()) != PLAYER_SENSOR && (int)(contact->GetFixtureA()->GetBody()->GetUserData()) / 1000000 == BUTTON) {
-		cout << "Contact with button. Platform id: " << (int)(contact->GetFixtureB()->GetBody()->GetUserData()) - 7000000 << endl;
-		buttons[(int)(contact->GetFixtureA()->GetBody()->GetUserData()) - 7000000]++;
-	}
-
-	// Set the gravity of the player correctly
+	// If the player is on a ladder then they shouldn't have gravity
 	if (playerLadderContacts > 0)
 		playerBody->SetGravityScale(0);
 }
 
 void CollisionListener::EndContact(b2Contact* contact) {
-	// These two check if the player leaves a moving platform. If so, we need to find the correct body and add it to the vector.
-	// It will then be used to get the velocity, which will be added to the players velocity to stop them falling of the platform when not moving
-	if ((int)(contact->GetFixtureA()->GetUserData()) == PLAYER_SENSOR && (int)(contact->GetFixtureB()->GetBody()->GetUserData()) == MOVING_PLATFORM) {
-		playerMPContacts--;
+	// Store the type of fixture. There are 8 possible values defined in Box2dOverrides.h
+	int fixtureAData = (int)contact->GetFixtureA()->GetUserData();
+	int fixtureBData = (int)contact->GetFixtureB()->GetUserData();
 
-		// This searches the vector for the moving platform body and returns the index
-		auto index = find(movingPlatforms.begin(), movingPlatforms.end(), contact->GetFixtureB()->GetBody()) - movingPlatforms.begin();
-		// This will actually remove the body since we no longer need it
-		movingPlatforms.erase(movingPlatforms.begin() + index);
-	}
+	// We need to know what moving platforms the player is on so we can add to the velocity. This stops the player from sliding off
+	if (fixtureAData == PLAYER_SENSOR && fixtureBData == MOVING_PLATFORM)
+		movingPlatforms.erase(contact->GetFixtureB()->GetBody());
+	else if (fixtureAData == MOVING_PLATFORM && fixtureBData == PLAYER_SENSOR)
+		movingPlatforms.erase(contact->GetFixtureA()->GetBody());
 
-	if ((int)(contact->GetFixtureB()->GetUserData()) == PLAYER_SENSOR && (int)(contact->GetFixtureA()->GetBody()->GetUserData()) == MOVING_PLATFORM) {
-		playerMPContacts--;
-		
-		// This searches the vector for the moving platform body and returns the index
-		auto index = find(movingPlatforms.begin(), movingPlatforms.end(), contact->GetFixtureA()->GetBody()) - movingPlatforms.begin();
-		// This will actually remove the body since we no longer need it
-		movingPlatforms.erase(movingPlatforms.begin() + index);
-	}
-	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// All of the basics, checks for collisions with ladders, things that kill the player and the end of the level
+	if (fixtureAData == LADDER && fixtureBData == PLAYER_BODY || fixtureBData == LADDER && fixtureAData == PLAYER_BODY)
+		playerLadderContacts--;
+	else if (fixtureAData == DANGEROUS_TILE && fixtureBData == PLAYER_BODY || fixtureBData == DANGEROUS_TILE && fixtureAData == PLAYER_BODY)
+		playerDangerContacts--;
+	else if (fixtureAData == FINISH_POINT && fixtureBData == PLAYER_BODY || fixtureBData == FINISH_POINT && fixtureAData == PLAYER_BODY)
+		playerFinishPointContacts--;
 
-	// If one of the fixtures is the player's sensor breaking contact with something, then the player must now be off of the ground
-	if ((int)(contact->GetFixtureA()->GetUserData()) == PLAYER_SENSOR && (int)(contact->GetFixtureB()->GetBody()->GetUserData()) != LADDER && (int)(contact->GetFixtureB()->GetBody()->GetUserData()) != FINISH_POINT && (int)(contact->GetFixtureB()->GetBody()->GetUserData()) != DANGEROUS_TILE ||
-		(int)(contact->GetFixtureB()->GetUserData()) == PLAYER_SENSOR && (int)(contact->GetFixtureA()->GetBody()->GetUserData()) != LADDER && (int)(contact->GetFixtureA()->GetBody()->GetUserData()) != FINISH_POINT && (int)(contact->GetFixtureA()->GetBody()->GetUserData()) != DANGEROUS_TILE) {
+	// As long as it's not the player's foot sensor, if something touches a button we need to know so we can activate the platform it's linked to
+	else if (fixtureAData != PLAYER_SENSOR && fixtureBData / 1000000 == BUTTON)
+		buttons[fixtureBData - BUTTON * 1000000]--;
+	else if (fixtureAData / 1000000 == BUTTON && fixtureBData != PLAYER_SENSOR)
+		buttons[fixtureAData - BUTTON * 1000000]--;
+
+	// Finally, we need to know when the player is on the ground. This stops them from jumping in mid air and flying around
+	if (fixtureAData == PLAYER_SENSOR && fixtureBData != LADDER && fixtureBData != DANGEROUS_TILE && fixtureBData != FINISH_POINT && fixtureBData != BUTTON ||
+		fixtureBData == PLAYER_SENSOR && fixtureAData != LADDER && fixtureAData != DANGEROUS_TILE && fixtureAData != FINISH_POINT && fixtureAData != BUTTON) {
 		playerGroundContacts--;
-		
-		// This checks if fixture A is the ground/entity
-		if ((int)(contact->GetFixtureA()->GetUserData()) != PLAYER_SENSOR)
+
+		// If fixture A is an entity, then we need to add it to the entity list. This will then be used to apply a kickback to it when the player walks
+		if (fixtureAData == ENTITY)
 			entityFixturesUnderfoot.erase(contact->GetFixtureA());
-		// Otherwise fixture it will be fixture B
-		else
+		// Same thing if the entity is fixture B instead
+		else if (fixtureBData == ENTITY)
 			entityFixturesUnderfoot.erase(contact->GetFixtureB());
 	}
 
-	// Checking for collisions with dangerous tiles
-	else if ((int)(contact->GetFixtureA()->GetBody()->GetUserData()) == DANGEROUS_TILE && (int)(contact->GetFixtureB()->GetUserData()) != PLAYER_SENSOR ||
-			(int)(contact->GetFixtureB()->GetBody()->GetUserData()) == DANGEROUS_TILE && (int)(contact->GetFixtureA()->GetUserData()) != PLAYER_SENSOR) {
-		playerDangerContacts--;
-	}
-
-	else if ((int)(contact->GetFixtureA()->GetBody()->GetUserData()) == LADDER && (int)(contact->GetFixtureB()->GetUserData()) != PLAYER_SENSOR ||
-		(int)(contact->GetFixtureB()->GetBody()->GetUserData()) == LADDER && (int)(contact->GetFixtureA()->GetUserData()) != PLAYER_SENSOR) {
-		playerLadderContacts--;
-	}
-
-	else if ((int)(contact->GetFixtureA()->GetBody()->GetUserData()) != PLAYER_SENSOR && (int)(contact->GetFixtureB()->GetBody()->GetUserData()) / 1000000 == BUTTON) {
-		cout << "End contact with button. Platform id: " << (int)(contact->GetFixtureB()->GetBody()->GetUserData()) - 7000000 << endl;
-		buttons[(int)(contact->GetFixtureB()->GetBody()->GetUserData()) - 7000000]--;
-	}
-
-	else if ((int)(contact->GetFixtureB()->GetBody()->GetUserData()) != PLAYER_SENSOR && (int)(contact->GetFixtureA()->GetBody()->GetUserData()) / 1000000 == BUTTON) {
-		cout << "End contact with button. Platform id: " << (int)(contact->GetFixtureB()->GetBody()->GetUserData()) - 7000000 << endl;
-		buttons[(int)(contact->GetFixtureA()->GetBody()->GetUserData()) - 7000000]--;
-	}
-	
-	// Set the gravity of the player correctly
+	// If the player is no longer on a ladder then they should have the normal gravity
 	if (playerLadderContacts < 1)
 		playerBody->SetGravityScale(1);
 }

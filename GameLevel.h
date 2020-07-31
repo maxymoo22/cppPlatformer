@@ -16,6 +16,7 @@
 #define FINISH_POINT 5
 #define MOVING_PLATFORM 6
 #define BUTTON 7
+#define ENTITY 8
 
 using namespace std;
 

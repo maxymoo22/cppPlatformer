@@ -261,9 +261,9 @@ void Platformer::gameScreenLoop(bool pendingMouseEvent, bool pendingKeyEvent) {
 	maps[currentLevel].doMovingPlatformLogic(collisionListener->buttons);
 
 	// This is to stop the player sliding off of a moving platform
-	if (collisionListener->playerMPContacts > 0)
+	if (collisionListener->movingPlatforms.size() > 0)
 		// If they are on the platform, we want to get the platforms velocity and add it to the player's so that it moves relative to the platform
-		playerBody->ApplyLinearImpulseToCenter(b2Vec2(collisionListener->movingPlatforms[0]->GetLinearVelocity().x, 0), true);
+		playerBody->ApplyLinearImpulseToCenter(b2Vec2((*collisionListener->movingPlatforms.begin())->GetLinearVelocity().x, 0), true);
 
 	// Step the physics forwards
 	physicsWorld->Step(1.0 / 80.0, 8, 3);
