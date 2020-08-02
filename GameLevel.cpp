@@ -173,31 +173,22 @@ GameLevel::~GameLevel() {
 }
 
 void GameLevel::createHitboxes(b2World* world) {
-	// Remove any thingies if they existed
+	// Remove any thingies if they existed from the previous level
 	movingPlatforms.clear();
 	entities.clear();
 
 	for (auto& object : collisionObjects)
 	{
-		// This is only used if the object is a button
-		int platformID = -1;
+		// A map of properties is easier to use than a vector
+		unordered_map<string, tmx::Property> objectProperties;
+		for (tmx::Property objectProperty : object.getProperties()) {
+			auto var1 = objectProperty;
+			objectProperties.insert(make_pair(objectProperty.getName(), var1));
+		}
 
 		if (object.getType() == "entity" || object.getType() == "mp") {
-			createEntity(&object, world, object.getType() == "mp");
+			createEntity(&object, world, object.getType() == "mp", objectProperties);
 			continue;
-		}
-		else if (object.getType() == "button") {
-			for (const tmx::Property& property : object.getProperties()) {
-				if (property.getType() == tmx::Property::Type::Int && property.getName() == "platformID") {
-					// We don't want to have platform ids over 100,000. It could be higher, but just stoppig here to be safe. If it goes too high, the
-					// collision handler wont be able to get the correct platform id from the box2d user data
-					if (property.getIntValue() < 100000)
-						platformID = property.getIntValue();
-				}
-			}
-
-			// If this button didn't have a platform ID we can skip it
-			if (platformID < 0) continue;
 		}
 
 		b2BodyDef tileBodyDef;
@@ -209,26 +200,34 @@ void GameLevel::createHitboxes(b2World* world) {
 		const auto& objectPoints = object.getPoints();
 		const int pointCount = (int)(objectPoints.size());
 
-		b2ChainShape collisionShape;
 		b2Vec2* chainPoints = new b2Vec2[pointCount];
-
 		for (int i = 0; i < pointCount; i++)
 			chainPoints[i] = b2Vec2(objectPoints[i].x / 32, -1 * objectPoints[i].y / 32);
 
+		b2FixtureDef fixtureDef;
+		b2ChainShape collisionShape;
+		// We need a polygon shape for the finish points on the level
+		b2PolygonShape polygonShape;
+
 		// Make the collision chape from the points
 		collisionShape.CreateLoop(chainPoints, pointCount);
-
-		delete[] chainPoints;
-		chainPoints = NULL;
-
-		b2FixtureDef fixtureDef;
 		fixtureDef.shape = &collisionShape;
 
-		// If it's a ladder, finish point or button then we need to make it a sensor so the player doesn't get blocked
-		if (object.getType() == "ladder" || object.getType() == "finish" || object.getType() == "button") {
+		// Ladders should be sensors so that there is no collision response
+		if (object.getType() == "ladder") {
 			fixtureDef.isSensor = true;
-			// Very messy ternaries. Oh well. The math for the button user data is a way to store 2 numbers in 1.
-			fixtureDef.userData = object.getType() == "ladder" ? (void*)LADDER : object.getType() == "finish" ? (void*)FINISH_POINT : (void*)(BUTTON * 1000000 + platformID);
+			fixtureDef.userData = (void*)LADDER;
+		}
+
+		else if (object.getType() == "button") {
+			fixtureDef.isSensor = true;
+
+			// We don't want to have platform ids over 100,000. It could be higher, but just stoppig here to be safe. If it goes too high, the
+			// collision handler wont be able to get the correct platform id from the box2d user data
+			if (objectProperties.count("platformID") > 0 && objectProperties["platformID"].getIntValue() < 100000) {
+				int platformUserData = BUTTON * 1000000 + objectProperties["platformID"].getIntValue();
+				fixtureDef.userData = (void*)platformUserData;
+			}	
 		}
 
 		else if(object.getType() == "danger") {
@@ -236,52 +235,39 @@ void GameLevel::createHitboxes(b2World* world) {
 			fixtureDef.userData = (void*)DANGEROUS_TILE;
 		}
 
+		// Finish points need to be sensors, but they also need to have an ID and a polygon shape
+		else if (object.getType() == "finish") {
+			fixtureDef.isSensor = true;
+			polygonShape.Set(chainPoints, pointCount);
+			fixtureDef.shape = &polygonShape;
+
+			if (objectProperties.count("level") > 0) {
+				int finishPointUserData = FINISH_POINT * 1000000 + objectProperties["level"].getIntValue();
+				fixtureDef.userData = (void*)finishPointUserData;
+			}
+		}
+
 		// Now we bind the shape to the body with a fixture
 		tileBody->CreateFixture(&fixtureDef);
+
+		delete[] chainPoints;
+		chainPoints = NULL;
 	}
 }
 
-void GameLevel::createEntity(tmx::Object* entityObject, b2World* world, bool movingPlatform) {
-	int tileGID = -1;
-
-	// The center is the middle of the object. It's better to have the box2d body position in the center bcs then the sdl texture rotation doesn't get broken
-	b2Vec2 entityCenter(-1, -1);
-
-	// These might be set - depends if it's a moving platform or not. The first vector are the left and right boundaries respectively.
-	// Same thing for the second vector, but it's top and bottom (respectively).
-	b2Vec2 movementBoundaries[2] = {b2Vec2(-1, -1), b2Vec2(-1, -1)};
+void GameLevel::createEntity(tmx::Object* entityObject, b2World* world, bool movingPlatform, unordered_map<string, tmx::Property> objectProperties) {
 	MPDirections movementType = MPDirections::NOT_SET;
-	b2Vec2 MPVelocity(0, 0);
-	bool usesButton = false;
+	
+	if (movingPlatform) {
+		if (objectProperties.count("direction") < 1) return;
+		/*if (objectProperties["direction"].getIntValue() == 1)
+			movementType = MPDirections::HORIZONTAL;
+		else if (objectProperties["direction"].getIntValue() == 2)
+			movementType = MPDirections::VERTICAL;
+		else if (objectProperties["direction"].getIntValue() == 3)
+			movementType = MPDirections::DIAGONAL;*/
 
-	// Need to parse out all of these properties.
-	for (const tmx::Property& property : entityObject->getProperties()) {
-		if (property.getType() == tmx::Property::Type::Int) {
-			if (property.getName() == "tileGID")
-				tileGID = property.getIntValue();
-			else if (property.getName() == "centerX")
-				entityCenter.x = (float)property.getIntValue() / 32;
-			else if (property.getName() == "centerY")
-				entityCenter.y = height - (float)property.getIntValue() / 32;
-			else if (property.getName() == "boundaryLeft")
-				movementBoundaries[0].x = (float)property.getIntValue() / 32;
-			else if (property.getName() == "boundaryRight")
-				movementBoundaries[0].y = (float)property.getIntValue() / 32;
-			else if (property.getName() == "boundaryTop")
-				movementBoundaries[1].x = height - (float)property.getIntValue() / 32;
-			else if (property.getName() == "boundaryBottom")
-				movementBoundaries[1].y = height - (float)property.getIntValue() / 32;
-			else if (property.getName() == "direction")
-				movementType = (MPDirections)property.getIntValue();
-		}
-		else if (property.getType() == tmx::Property::Type::Float) {
-			if (property.getName() == "horizontalVelocity")
-				MPVelocity.x = property.getFloatValue();
-			else if (property.getName() == "verticalVelocity")
-				MPVelocity.y = property.getFloatValue();
-		}
-		else if (property.getType() == tmx::Property::Type::Boolean && property.getName() == "usesButton")
-			usesButton = property.getBoolValue();
+		movementType = (MPDirections)objectProperties["direction"].getIntValue();
 	}
 
 	/* We want to exit if the object doent have the right properties, which means one of these:
@@ -290,10 +276,9 @@ void GameLevel::createEntity(tmx::Object* entityObject, b2World* world, bool mov
 	* The entity is a moving platform, but the movement boundaries haven't been set, or they don't correspond correctly to the direction of the platform
 	* The entity is amoving platform, but one of its velocity properties wasn't specified
 	*/
-	if (tileGID == -1 || entityCenter.x < 0 || entityCenter.y < 0 || movingPlatform && (\
-	    movementType == MPDirections::NOT_SET ||
-		(movementBoundaries[0].x < 0 || movementBoundaries[0].y < 0 || MPVelocity.x == 0) && (movementType == MPDirections::HORIZONTAL || movementType == MPDirections::DIAGONAL) ||
-		(movementBoundaries[1].x < 0 || movementBoundaries[1].y < 0 || MPVelocity.y == 0) && (movementType == MPDirections::VERTICAL || movementType == MPDirections::DIAGONAL))) {
+	if (objectProperties.count("tileGID") < 1 || objectProperties.count("centerX") < 1 || objectProperties.count("centerY") < 1 || movingPlatform && (\
+		(objectProperties.count("boundaryLeft") < 1 || objectProperties.count("boundaryRight") < 1 || objectProperties.count("horizontalVelocity") < 1) && (movementType == MPDirections::HORIZONTAL || movementType == MPDirections::DIAGONAL) ||
+		(objectProperties.count("boundaryTop") < 1 || objectProperties.count("boundaryBottom") < 1 || objectProperties.count("verticalVelocity") < 1) && (movementType == MPDirections::VERTICAL || movementType == MPDirections::DIAGONAL))) {
 
 		// This entity wasn't setup properly in the Tiled editor
 		cout << "NNNNNNNNNNNNNNNNNNAaaaaaaaaaah\nMoving platform: " << movingPlatform << endl;
@@ -304,14 +289,14 @@ void GameLevel::createEntity(tmx::Object* entityObject, b2World* world, bool mov
 	int tset_gid = -1;
 	SDL_Rect spriteRect;
 	// If we didn't find a valid tileset then skip the tile
-	if (!getTileSourceRect(tileGID, &tset_gid, &spriteRect)) return;
+	if (!getTileSourceRect(objectProperties["tileGID"].getIntValue(), &tset_gid, &spriteRect)) return;
 
 	b2BodyDef entityBodyDef;
 	if (movingPlatform)
 		entityBodyDef.type = b2_kinematicBody;
 	else
 		entityBodyDef.type = b2_dynamicBody;
-	entityBodyDef.position.Set(entityCenter.x, entityCenter.y);
+	entityBodyDef.position.Set((float)objectProperties["centerX"].getIntValue() / 32, height - (float)objectProperties["centerY"].getIntValue() / 32);
 	b2Body* entityBody = world->CreateBody(&entityBodyDef);
 
 	const auto& objectPoints = entityObject->getPoints();
@@ -320,7 +305,7 @@ void GameLevel::createEntity(tmx::Object* entityObject, b2World* world, bool mov
 	b2Vec2* chainPoints = new b2Vec2[pointCount];
 
 	for (int i = 0; i < pointCount; i++)
-		chainPoints[i] = b2Vec2(objectPoints[i].x / 32 - (entityCenter.x - (entityObject->getPosition().x / 32)), -1 * objectPoints[i].y / 32 - (entityCenter.y - (height - (entityObject->getPosition().y / 32))));
+		chainPoints[i] = b2Vec2(objectPoints[i].x / 32 - (entityBodyDef.position.x - (entityObject->getPosition().x / 32)), -1 * objectPoints[i].y / 32 - (entityBodyDef.position.y - (height - (entityObject->getPosition().y / 32))));
 
 	b2PolygonShape collisionShape;
 	collisionShape.Set(chainPoints, pointCount);
@@ -338,20 +323,37 @@ void GameLevel::createEntity(tmx::Object* entityObject, b2World* world, bool mov
 	if (movingPlatform) {
 		// Need to get the correct direction for the platform
 		b2Vec2 direction(0, 0);
-		if (movementType == MPDirections::HORIZONTAL || movementType == MPDirections::DIAGONAL)
+		b2Vec2 MPVelocity(0, 0);
+		b2Vec2 horizontalMovementBoundaries(0, 0);
+		b2Vec2 verticalMovementBoundaries(0, 0);
+		if (movementType == MPDirections::HORIZONTAL || movementType == MPDirections::DIAGONAL) {
 			direction.x = 1;
-		if (movementType == MPDirections::VERTICAL || movementType == MPDirections::DIAGONAL)
+			MPVelocity.x = objectProperties["horizontalVelocity"].getFloatValue();
+			horizontalMovementBoundaries.x = (float)objectProperties["boundaryLeft"].getIntValue() / 32;
+			horizontalMovementBoundaries.y = (float)objectProperties["boundaryRight"].getIntValue() / 32;
+		}
+		if (movementType == MPDirections::VERTICAL || movementType == MPDirections::DIAGONAL) {
 			direction.y = 1;
-
-		MovingPlatform movingPlatform = { tset_gid, spriteRect, entityBody, (int)movementType, usesButton, !usesButton, movementBoundaries[0], movementBoundaries[1], MPVelocity, direction };
-		
-		// Only start the platform if it doesn't use a button
-		if (usesButton == false) {
-			cout << "Starting platform...\n";
-			entityBody->SetLinearVelocity(b2Vec2(MPVelocity.x, MPVelocity.y));
+			MPVelocity.y = objectProperties["verticalVelocity"].getFloatValue();
+			verticalMovementBoundaries.x = height - (float)objectProperties["boundaryTop"].getIntValue() / 32;
+			verticalMovementBoundaries.y = height - (float)objectProperties["boundaryBottom"].getIntValue() / 32;
 		}
 
+		bool usesButton = false;
+		if(objectProperties.count("usesButton") > 0)
+			usesButton = objectProperties["usesButton"].getBoolValue();
+		cout << "\n---------------------\nUses button: " << usesButton << "\n-----------------------------------\n\n";
+
+		MovingPlatform movingPlatform = { tset_gid, spriteRect, entityBody, (int)movementType, usesButton, !usesButton, horizontalMovementBoundaries, verticalMovementBoundaries, MPVelocity, direction };
+		dumpMovingPlatformData(true, &movingPlatform);
+
+		// Only start the platform if it doesn't use a button
+		if (usesButton == false)
+			entityBody->SetLinearVelocity(b2Vec2(MPVelocity.x, MPVelocity.y));
+
 		movingPlatforms.insert(make_pair((int)entityObject->getUID(), movingPlatform));
+		cout << "Size of moving platforms map: " << movingPlatforms.size() << endl;
+		//dumpMovingPlatformData(true, &moving)
 	}
 	else {
 		Entity entity = { tset_gid, spriteRect, entityBody };
@@ -359,7 +361,25 @@ void GameLevel::createEntity(tmx::Object* entityObject, b2World* world, bool mov
 	}
 }
 
-void GameLevel::checkMovingPlatformBoundaries() {
+void GameLevel::doMovingPlatformLogic(unordered_map<int, int> buttons) {
+	for (auto buttonMapElement : buttons) {
+		MovingPlatform& platform = movingPlatforms[buttonMapElement.first];
+
+		// To prevent accidental buttons, we can use a simple check
+		if (platform.usesButton == false) continue;
+
+		if (buttonMapElement.second < 1) {
+			platform.entityBody->SetLinearVelocity(b2Vec2(0, 0));
+			platform.active = false;
+		}
+		else {
+			//cout << "Yooooo stepped on button " << buttonMapElement.first << endl;
+			// The direction will either be -1 or 1, so multiplying it with the speed gets the platform going in the same direction as before
+			platform.entityBody->SetLinearVelocity(b2Vec2(platform.direction.x * platform.speed.x, platform.direction.y * platform.speed.y));
+			platform.active = true;
+		}
+	}
+
 	for (auto& pair : movingPlatforms) {
 		MovingPlatform& platform = pair.second;
 
@@ -409,23 +429,21 @@ void GameLevel::checkMovingPlatformBoundaries() {
 	}
 }
 
-void GameLevel::doMovingPlatformLogic(unordered_map<int, int> buttons) {
-	for (auto buttonMapElement : buttons) {
-		MovingPlatform& platform = movingPlatforms[buttonMapElement.first];
+void GameLevel::dumpMovingPlatformData(bool param, MovingPlatform* mp) {
+	MovingPlatform p;
+	if (param == true)
+		p = *mp;
+	else
+		p = movingPlatforms[34];
 
-		// To prevent accidental buttons, we can use a simple check
-		if (platform.usesButton == false) continue;
-
-		if (buttonMapElement.second < 1) {
-			platform.entityBody->SetLinearVelocity(b2Vec2(0, 0));
-			platform.active = false;
-		}
-		else {
-			// The direction will either be -1 or 1, so multiplying it with the speed gets the platform going in the same direction as before
-			platform.entityBody->SetLinearVelocity(b2Vec2(platform.direction.x * platform.speed.x, platform.direction.y * platform.speed.y));
-			platform.active = true;
-		}
-	}
-
-	checkMovingPlatformBoundaries();
+	cout << "Active: " << p.active << endl;
+	cout << "Direction: (" << p.direction.x << ", " << p.direction.y << ")\n";
+	cout << "Movement type: " << p.movementType << endl;
+	cout << "Speed: (" << p.speed.x << ", " << p.speed.y << ")\n";
+	cout << "Sprite rect x: " << p.spriteRect.x << endl;
+	cout << "Sprite rect y: " << p.spriteRect.y << endl;
+	cout << "Tileset GID: " << p.tilesetGID << endl;
+	cout << "Uses button: " << p.usesButton << endl;
+	cout << "Horizontal movement boundaries: (" << p.xMovementBoundaries.x << ", " << p.xMovementBoundaries.y << ")\n";
+	cout << "Vertical movement boundaries: (" << p.yMovementBoundaries.x << ", " << p.yMovementBoundaries.y << ")\n";
 }

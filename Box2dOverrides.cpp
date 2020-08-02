@@ -2,6 +2,7 @@
 
 CollisionListener::CollisionListener() {
 	playerBody = NULL;
+	levelEntranceNum = -1;
 }
 
 void CollisionListener::SetPlayerBody(b2Body* body) {
@@ -14,6 +15,7 @@ void CollisionListener::clear() {
 	playerDangerContacts = 0;
 	playerLadderContacts = 0;
 	playerFinishPointContacts = 0;
+	levelEntranceNum = -1;
 
 	// These 4 need to be reset because they are per-level based
 	movingPlatforms.clear();
@@ -33,19 +35,33 @@ void CollisionListener::BeginContact(b2Contact* contact) {
 	else if (fixtureAData == MOVING_PLATFORM && fixtureBData == PLAYER_SENSOR)
 		movingPlatforms.insert(contact->GetFixtureA()->GetBody());
 
-	// All of the basics, checks for collisions with ladders, things that kill the player and the end of the level
+	// The basics, checks for collisions with ladders and things that kill the player
 	if (fixtureAData == LADDER && fixtureBData == PLAYER_BODY || fixtureBData == LADDER && fixtureAData == PLAYER_BODY)
 		playerLadderContacts++;
 	else if (fixtureAData == DANGEROUS_TILE && fixtureBData == PLAYER_BODY || fixtureBData == DANGEROUS_TILE && fixtureAData == PLAYER_BODY)
 		playerDangerContacts++;
-	else if (fixtureAData == FINISH_POINT && fixtureBData == PLAYER_BODY || fixtureBData == FINISH_POINT && fixtureAData == PLAYER_BODY)
+
+	// End of level
+	else if (fixtureAData / 1000000 == FINISH_POINT && fixtureBData == PLAYER_BODY) {
 		playerFinishPointContacts++;
+		// Store the finish point that the player is currently touching. This will be used to decide which level they go to
+		levelEntranceNum = fixtureAData - FINISH_POINT * 1000000;
+	}
+	else if (fixtureBData / 1000000 == FINISH_POINT && fixtureAData == PLAYER_BODY) {
+		playerFinishPointContacts++;
+		// Store the finish point that the player is currently touching. This will be used to decide which level they go to
+		levelEntranceNum = fixtureBData - FINISH_POINT * 1000000;
+	}
 
 	// As long as it's not the player's foot sensor, if something touches a button we need to know so we can activate the platform it's linked to
-	else if (fixtureAData != PLAYER_SENSOR && fixtureBData / 1000000 == BUTTON)
+	else if (fixtureAData != PLAYER_SENSOR && fixtureBData / 1000000 == BUTTON) {
 		buttons[fixtureBData - BUTTON * 1000000]++;
-	else if (fixtureAData / 1000000 == BUTTON && fixtureBData != PLAYER_SENSOR)
+		cout << "Stepped on button\n";
+	}
+	else if (fixtureAData / 1000000 == BUTTON && fixtureBData != PLAYER_SENSOR) {
 		buttons[fixtureAData - BUTTON * 1000000]++;
+		cout << "Stepped on button\n";
+	}
 
 	// Finally, we need to know when the player is on the ground. This stops them from jumping in mid air and flying around
 	if (fixtureAData == PLAYER_SENSOR && fixtureBData != LADDER && fixtureBData != DANGEROUS_TILE && fixtureBData != FINISH_POINT && fixtureBData != BUTTON ||
@@ -136,6 +152,7 @@ void Box2dDraw::DrawPolygon(const b2Vec2* vertices, int32 vertexCount, const b2C
 	for (int i = 0; i < vertexCount - 1; i++) {
 		SDL_RenderDrawLine(renderer, vertices[i].x * 32 - camXOffset, SCREEN_HEIGHT - (vertices[i].y * 32) - camYOffset, vertices[i + 1].x * 32 - camXOffset, SCREEN_HEIGHT - (vertices[i + 1].y * 32) - camYOffset);
 	}
+	SDL_RenderDrawLine(renderer, vertices[vertexCount - 1].x * 32 - camXOffset, SCREEN_HEIGHT - (vertices[vertexCount - 1].y * 32) - camYOffset, vertices[0].x * 32 - camXOffset, SCREEN_HEIGHT - (vertices[0].y * 32) - camYOffset);
 }
 
 void Box2dDraw::DrawSolidPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color) {
@@ -144,6 +161,7 @@ void Box2dDraw::DrawSolidPolygon(const b2Vec2* vertices, int32 vertexCount, cons
 	for (int i = 0; i < vertexCount - 1; i++) {
 		SDL_RenderDrawLine(renderer, vertices[i].x * 32 - camXOffset, SCREEN_HEIGHT - (vertices[i].y * 32) - camYOffset, vertices[i + 1].x * 32 - camXOffset, SCREEN_HEIGHT - (vertices[i + 1].y * 32) - camYOffset);
 	}
+	SDL_RenderDrawLine(renderer, vertices[vertexCount - 1].x * 32 - camXOffset, SCREEN_HEIGHT - (vertices[vertexCount - 1].y * 32) - camYOffset, vertices[0].x * 32 - camXOffset, SCREEN_HEIGHT - (vertices[0].y * 32) - camYOffset);
 
 	/*Sint16* xVertices = new Sint16[vertexCount];
 	Sint16* yVertices = new Sint16[vertexCount];

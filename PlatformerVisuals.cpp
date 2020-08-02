@@ -386,7 +386,3 @@ good luck!", SCREEN_WIDTH / 2, 350);
 
 	SDL_RenderPresent(renderer);
 }
-
-void Platformer::levelSelectScreenLoop(bool pendingMouseEvent) {
-
-}

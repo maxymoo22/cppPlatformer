@@ -37,6 +37,10 @@ public:
 	// If the player is at the end of the level
 	int playerFinishPointContacts = 0;
 
+	// This variable is for the level-selection 'level'. When the player comes into contact with a level entrance, we need to store the level number in case
+	// the user presses enter to join the level. If the player isn't currently touching a level entrance on the level selection level, this will be -1
+	int levelEntranceNum;
+
 	// For moving platforms
 	set<b2Body*> movingPlatforms;
 

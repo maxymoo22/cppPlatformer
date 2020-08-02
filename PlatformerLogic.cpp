@@ -63,7 +63,7 @@ bool Platformer::loadAssets() {
 
 	menuSprites = loadTexture("resources/menuSpritesheet.png");
 
-	for (int i = 0; i < 2; i++) {
+	for (int i = 0; i < 1; i++) {
 		string mapName = "resources/maps/level " + to_string(i + 1) + ".tmx";
 		result = maps[i].load(SCREEN_WIDTH, SCREEN_HEIGHT, renderer, mapName.c_str(), physicsWorld);
 		if (!result) return false;
@@ -110,8 +110,7 @@ void Platformer::loop() {
 				quit = true;
 			}
 			else if (eventHandler.type == SDL_MOUSEBUTTONUP && eventHandler.button.button == SDL_BUTTON_LEFT) {
-				/*cout << "Clicked at (" << eventHandler.button.x << ", " << eventHandler.button.y << ")\n";
-				cout << "Entity pos: " << maps[currentLevel].entities[0].entityBody->GetPosition().x * 32.0 << endl;*/
+				maps[currentLevel].dumpMovingPlatformData(false, NULL);
 				pendingMouseEvent = true;
 			}
 			else if (eventHandler.type == SDL_KEYDOWN) {

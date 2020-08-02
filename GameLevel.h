@@ -84,12 +84,12 @@ public:
 	void render(float camXOffset, float camYOffset);
 	void createHitboxes(b2World* world);
 
-	// This will change the direction of the platform if it has reached its boundaries
-	void checkMovingPlatformBoundaries();
 	// This will change the direction of the platform if it has reached its boundaries, and stop/start the platform if needed
 	void doMovingPlatformLogic(unordered_map<int, int> buttons);
 	// The direction is needed for setting the platforms velocity and adding that velocity to the player
 	enum class MPDirections {NOT_SET, HORIZONTAL, VERTICAL, DIAGONAL};
+
+	void dumpMovingPlatformData(bool param, MovingPlatform* mp);
 
 private:
 	// The map data
@@ -112,7 +112,7 @@ private:
 	// We need a pointer to the renderer to render and create textures for this level
 	SDL_Renderer* renderer = NULL;
 
-	void createEntity(tmx::Object* entityObject, b2World* world, bool movingPlatform);
+	void createEntity(tmx::Object* entityObject, b2World* world, bool movingPlatform, unordered_map<string, tmx::Property> objectProperties);
 
 	// Checks if a tile is inside the camera boundaries
 	bool isTileInRect(SDL_Rect* tileRect);
