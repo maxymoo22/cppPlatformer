@@ -59,9 +59,13 @@ private:
 	GameLevel maps[2];
 	int currentLevel;
 
+	// This is the level that players use to decide which level they want to go to
+	GameLevel levelSelectionLevel;
+	bool selectingLevel;
+
 	// The font handler class loads fonts and can draw them to the screen
 	FontHandler* fontHandler;
-	// This handles audio abviously
+	// This handles audio (obviously)
 	AudioHandler audioHandler;
 
 	// Camera offset. These dont hold the position of the camera, but rather just specify an offset that we need to se when rendering things. This gives the illusion of a camera
@@ -151,4 +155,5 @@ private:
 	void muteButton();
 	void unmuteButton();
 	void respawnButton();
+	void levelSelectButton();
 };

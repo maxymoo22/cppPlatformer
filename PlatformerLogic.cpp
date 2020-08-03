@@ -174,6 +174,7 @@ Platformer::Platformer() {
 	currentScreenType = screenTypes::MAIN_MENU;
 	frameCount = 0;
 	muted = false;
+	selectingLevel = false;
 }
 
 // Frees memory

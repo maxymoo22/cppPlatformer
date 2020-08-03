@@ -63,6 +63,8 @@ void Platformer::menuScreenLoop(bool pendingMouseEvent) {
 						muteButton();
 					else if (button.text == "Unmute")
 						unmuteButton();
+					else if (button.text == "Select\nlevel")
+						levelSelectButton();
 				}
 			}
 
@@ -264,6 +266,12 @@ void Platformer::gameScreenLoop(bool pendingMouseEvent, bool pendingKeyEvent) {
 	if (collisionListener->movingPlatforms.size() > 0)
 		// If they are on the platform, we want to get the platforms velocity and add it to the player's so that it moves relative to the platform
 		playerBody->ApplyLinearImpulseToCenter(b2Vec2((*collisionListener->movingPlatforms.begin())->GetLinearVelocity().x, 0), true);
+
+	if (keyStates[SDL_SCANCODE_EXECUTE] && selectingLevel) {
+		// We need to delete all of the physics for the level and switch to the new level
+		createPhysics();
+		maps[collisionListener->levelEntranceNum].createHitboxes(physicsWorld);
+	}
 
 	// Step the physics forwards
 	physicsWorld->Step(1.0 / 80.0, 8, 3);
