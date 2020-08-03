@@ -95,7 +95,6 @@ private:
 	// The map data
 	int width = 0;
 	int height = 0;
-	bool useObjectCollisions = false;
 
 	vector<Tile> tiles;
 	vector<Entity> entities;

@@ -267,10 +267,12 @@ void Platformer::gameScreenLoop(bool pendingMouseEvent, bool pendingKeyEvent) {
 		// If they are on the platform, we want to get the platforms velocity and add it to the player's so that it moves relative to the platform
 		playerBody->ApplyLinearImpulseToCenter(b2Vec2((*collisionListener->movingPlatforms.begin())->GetLinearVelocity().x, 0), true);
 
-	if (keyStates[SDL_SCANCODE_EXECUTE] && selectingLevel) {
+	if (keyStates[SDL_SCANCODE_RETURN] && currentLevel == 0 && collisionListener->playerFinishPointContacts > 0) {
+		//selectingLevel = false;
 		// We need to delete all of the physics for the level and switch to the new level
+		currentLevel = collisionListener->levelEntranceNum;
 		createPhysics();
-		maps[collisionListener->levelEntranceNum].createHitboxes(physicsWorld);
+		maps[currentLevel].createHitboxes(physicsWorld);
 	}
 
 	// Step the physics forwards
@@ -288,10 +290,10 @@ void Platformer::gameScreenLoop(bool pendingMouseEvent, bool pendingKeyEvent) {
 	}
 
 	// If the player has reached the end then (obviously) we need to go to the next level
-	if (collisionListener->playerFinishPointContacts > 0) {
+	if (collisionListener->playerFinishPointContacts > 0 && currentLevel > 0) {
 		currentLevel++;
-		if (currentLevel == 2)
-			currentLevel = 0;
+		if (currentLevel == 3)
+			currentLevel = 1;
 
 		camXOffset = 0;
 		camYOffset = 0;

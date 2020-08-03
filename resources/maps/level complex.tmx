@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.4" tiledversion="1.4.1" orientation="orthogonal" renderorder="right-down" width="100" height="100" tilewidth="32" tileheight="32" infinite="0" nextlayerid="6" nextobjectid="72">
+ <properties>
+  <property name="useObjectCollisions" type="bool" value="true"/>
+ </properties>
+ <tileset firstgid="1" name="tileset1" tilewidth="32" tileheight="32" tilecount="10" columns="10">
+  <image source="spritesheet.png" width="320" height="32"/>
+ </tileset>
+ <layer id="3" name="danger" width="100" height="100">
+  <data encoding="base64" compression="zlib">
+   eJztziEBAAAIA7Bb+hcmwS2YLcESAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACgme8AAABwbgEIlwAK
+  </data>
+ </layer>
+ <layer id="1" name="platforms" width="100" height="100">
+  <data encoding="base64" compression="zlib">
+   eJztzrEJADAIAEER4v4j6wRpLbyD7z8CAAAAAAAAAAAAAAAAAAAAAAAAAAAAYFdO71PtrQEAAAAAAAAAAAAAAAAAAABwUAPdpQAs
+  </data>
+ </layer>
+ <layer id="5" name="ladders" width="100" height="100">
+  <data encoding="base64" compression="zlib">
+   eJzt20sKgCAQAFD7d/8TVxQUYuDC0OA9mJWjCLMZwQkBAAAAAAAAAAAAAAAAAAAAAAAAAACAlq1X0Ab1aEu/x1D7EgAAUFj3cT6nJTNPPco73nLTD8J7EwAAAAAAAAAAAKCOErODqTPGcP8VnaM1/4ABIC13Bodynj1LHHEPkxLP7uTs4d0G2l8BaA==
+  </data>
+ </layer>
+ <objectgroup id="4" name="collisions">
+  <object id="32" type="mp" x="480" y="3172">
+   <properties>
+    <property name="boundaryLeft" type="int" value="256"/>
+    <property name="boundaryRight" type="int" value="512"/>
+    <property name="centerX" type="int" value="496"/>
+    <property name="centerY" type="int" value="3184"/>
+    <property name="direction" type="int" value="1"/>
+    <property name="horizontalVelocity" type="float" value="1"/>
+    <property name="tileGID" type="int" value="1"/>
+    <property name="usesButton" type="bool" value="true"/>
+   </properties>
+   <polygon points="0,0 4,-4 28,-4 32,0 32,20 24,28 8,28 0,20"/>
+  </object>
+  <object id="34" type="mp" x="640" y="3040">
+   <properties>
+    <property name="boundaryBottom" type="int" value="3168"/>
+    <property name="boundaryTop" type="int" value="2976"/>
+    <property name="centerX" type="int" value="656"/>
+    <property name="centerY" type="int" value="3056"/>
+    <property name="direction" type="int" value="2"/>
+    <property name="tileGID" type="int" value="6"/>
+    <property name="verticalVelocity" type="float" value="2"/>
+   </properties>
+   <polygon points="0,0 0,32 32,32 32,8 24,0"/>
+  </object>
+  <object id="35" type="mp" x="1188" y="2976">
+   <properties>
+    <property name="boundaryLeft" type="int" value="736"/>
+    <property name="boundaryRight" type="int" value="1216"/>
+    <property name="centerX" type="int" value="1200"/>
+    <property name="centerY" type="int" value="2992"/>
+    <property name="direction" type="int" value="1"/>
+    <property name="horizontalVelocity" type="float" value="2"/>
+    <property name="tileGID" type="int" value="1"/>
+   </properties>
+   <polygon points="0,0 -4,4 -4,24 4,32 20,32 28,24 28,4 24,0"/>
+  </object>
+  <object id="36" type="mp" x="1536" y="2116">
+   <properties>
+    <property name="boundaryBottom" type="int" value="3008"/>
+    <property name="boundaryTop" type="int" value="2112"/>
+    <property name="centerX" type="int" value="1552"/>
+    <property name="centerY" type="int" value="2128"/>
+    <property name="direction" type="int" value="2"/>
+    <property name="tileGID" type="int" value="1"/>
+    <property name="verticalVelocity" type="float" value="3"/>
+   </properties>
+   <polygon points="0,0 4,-4 28,-4 32,0 32,20 24,28 8,28 0,20"/>
+  </object>
+  <object id="37" type="entity" x="897" y="2020.75">
+   <properties>
+    <property name="centerX" type="int" value="912"/>
+    <property name="centerY" type="int" value="2032"/>
+    <property name="tileGID" type="int" value="8"/>
+   </properties>
+   <polygon points="0,0 3.75,-3.75 26.25,-3.75 30,0 30,22.5 26.25,26.25 3.75,26.25 0,22.5"/>
+  </object>
+  <object id="38" type="entity" x="513" y="2084.75">
+   <properties>
+    <property name="centerX" type="int" value="528"/>
+    <property name="centerY" type="int" value="2096"/>
+    <property name="tileGID" type="int" value="8"/>
+   </properties>
+   <polygon points="0,0 3.75,-3.75 26.25,-3.75 30,0 30,22.5 26.25,26.25 3.75,26.25 0,22.5"/>
+  </object>
+  <object id="39" x="8" y="3168">
+   <polygon points="0,0 -8,8 -8,32 248,32 248,8 240,0"/>
+  </object>
+  <object id="40" x="664" y="3168">
+   <polygon points="0,0 8,8 8,32 -144,32 -152,24 -152,4 -148,0"/>
+  </object>
+  <object id="41" x="672" y="2980">
+   <polygon points="0,0 4,-4 60,-4 64,0 64,20 56,28 8,28 0,20"/>
+  </object>
+  <object id="43" x="1216" y="2980">
+   <polygon points="0,0 4,-4 60,-4 64,0 64,20 56,28 8,28 0,20"/>
+  </object>
+  <object id="44" x="1376" y="2984">
+   <polygon points="0,0 8,-8 120,-8 128,0 128,24 0,24"/>
+  </object>
+  <object id="45" x="1608" y="3008">
+   <polygon points="0,0 16,0 24,-8 24,-28 20,-32 -4,-32 -8,-28 -8,-8"/>
+  </object>
+  <object id="46" x="1532" y="2112">
+   <polygon points="0,0 4,4 4,24 -4,32 -1364,32 -1372,24 -1372,4 -1368,0"/>
+  </object>
+  <object id="47" x="1048" y="2112">
+   <polygon points="0,0 8,-8 8,-60 4,-64 -20,-64 -24,-60 -24,-8 -16,0"/>
+  </object>
+  <object id="48" x="664" y="2112">
+   <polygon points="0,0 8,-8 8,-60 4,-64 -20,-64 -24,-60 -24,-8 -16,0"/>
+  </object>
+  <object id="49" type="button" x="324" y="2110">
+   <properties>
+    <property name="platformID" type="int" value="50"/>
+   </properties>
+   <polygon points="0,0 0,2 24,2 24,0 20,-4 4,-4"/>
+  </object>
+  <object id="50" type="mp" x="704" y="1828">
+   <properties>
+    <property name="boundaryBottom" type="int" value="2112"/>
+    <property name="boundaryLeft" type="int" value="160"/>
+    <property name="boundaryRight" type="int" value="704"/>
+    <property name="boundaryTop" type="int" value="1824"/>
+    <property name="centerX" type="int" value="688"/>
+    <property name="centerY" type="int" value="1840"/>
+    <property name="direction" type="int" value="3"/>
+    <property name="horizontalVelocity" type="float" value="2.0078"/>
+    <property name="tileGID" type="int" value="1"/>
+    <property name="usesButton" type="bool" value="true"/>
+    <property name="verticalVelocity" type="float" value="1"/>
+   </properties>
+   <polygon points="0,0 0,20 -8,28 -24,28 -32,20 -32,0 -28,-4 -4,-4"/>
+  </object>
+  <object id="51" x="704" y="1848">
+   <polygon points="0,0 8,8 56,8 64,0 64,-20 60,-24 4,-24 0,-20"/>
+  </object>
+  <object id="53" type="entity" x="352" y="1788">
+   <properties>
+    <property name="centerX" type="int" value="400"/>
+    <property name="centerY" type="int" value="1744"/>
+    <property name="tileGID" type="int" value="8"/>
+   </properties>
+   <polygon points="0,0 4,4 92,4 96,0 96,-88 92,-92 4,-92 0,-88"/>
+  </object>
+  <object id="57" type="danger" x="960" y="2976">
+   <polygon points="0,0 0,-24 8,-28 12,-31 24,-31 28,-28 32,-24 32,0"/>
+  </object>
+  <object id="61" x="256" y="1848">
+   <polygon points="0,0 8,8 288,8 288,-16 280,-24 4,-24 0,-20"/>
+  </object>
+  <object id="66" type="button" x="228" y="3168">
+   <properties>
+    <property name="platformID" type="int" value="32"/>
+   </properties>
+   <polygon points="0,0 0,-2 4,-6 20,-6 24,-2 24,0"/>
+  </object>
+  <object id="67" type="ladder" x="44" y="3155">
+   <polygon points="0,0 25,-1098 96,-1091 28,1"/>
+  </object>
+  <object id="70" type="finish" x="704" y="1760">
+   <polygon points="0,0 0,64 64,64 64,0"/>
+  </object>
+ </objectgroup>
+</map>

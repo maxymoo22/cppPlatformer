@@ -19,12 +19,6 @@ bool GameLevel::load(int screenWidth, int screenHeight, SDL_Renderer* ren, const
 	width = tiledMap.getTileCount().x;
 	height = tiledMap.getTileCount().y;
 
-	for (const tmx::Property& property : tiledMap.getProperties())
-	{
-		if (property.getType() == tmx::Property::Type::Boolean && property.getBoolValue() == true)
-			useObjectCollisions = true;
-	}
-
 	// Loop through all of the tilesets
 	auto& mapTilesets = tiledMap.getTilesets();
 	for (auto& tileset : mapTilesets) {
@@ -45,7 +39,7 @@ bool GameLevel::load(int screenWidth, int screenHeight, SDL_Renderer* ren, const
 	for (auto& layer : mapLayers) {
 
 		// The "collisions" object layer holds the hitboxes for the level
-		if (layer->getName() == "collisions" && layer->getType() == tmx::Layer::Type::Object && useObjectCollisions == true)
+		if (layer->getName() == "collisions" && layer->getType() == tmx::Layer::Type::Object)
 			collisionObjects = layer->getLayerAs<tmx::ObjectGroup>().getObjects();
 
 		// We're only looking to add hitboxes to the tiles on the map, so if this layer isn't a tile layer, we'll move on.
@@ -241,10 +235,10 @@ void GameLevel::createHitboxes(b2World* world) {
 			polygonShape.Set(chainPoints, pointCount);
 			fixtureDef.shape = &polygonShape;
 
-			if (objectProperties.count("level") > 0) {
-				int finishPointUserData = FINISH_POINT * 1000000 + objectProperties["level"].getIntValue();
-				fixtureDef.userData = (void*)finishPointUserData;
-			}
+			int finishPointUserData = FINISH_POINT * 1000000;
+			if (objectProperties.count("level") > 0)
+				finishPointUserData += objectProperties["level"].getIntValue();
+			fixtureDef.userData = (void*)finishPointUserData;
 		}
 
 		// Now we bind the shape to the body with a fixture
@@ -260,13 +254,6 @@ void GameLevel::createEntity(tmx::Object* entityObject, b2World* world, bool mov
 	
 	if (movingPlatform) {
 		if (objectProperties.count("direction") < 1) return;
-		/*if (objectProperties["direction"].getIntValue() == 1)
-			movementType = MPDirections::HORIZONTAL;
-		else if (objectProperties["direction"].getIntValue() == 2)
-			movementType = MPDirections::VERTICAL;
-		else if (objectProperties["direction"].getIntValue() == 3)
-			movementType = MPDirections::DIAGONAL;*/
-
 		movementType = (MPDirections)objectProperties["direction"].getIntValue();
 	}
 
@@ -352,8 +339,7 @@ void GameLevel::createEntity(tmx::Object* entityObject, b2World* world, bool mov
 			entityBody->SetLinearVelocity(b2Vec2(MPVelocity.x, MPVelocity.y));
 
 		movingPlatforms.insert(make_pair((int)entityObject->getUID(), movingPlatform));
-		cout << "Size of moving platforms map: " << movingPlatforms.size() << endl;
-		//dumpMovingPlatformData(true, &moving)
+		//cout << "Size of moving platforms map: " << movingPlatforms.size() << endl;
 	}
 	else {
 		Entity entity = { tset_gid, spriteRect, entityBody };

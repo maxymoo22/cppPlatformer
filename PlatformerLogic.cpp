@@ -63,11 +63,13 @@ bool Platformer::loadAssets() {
 
 	menuSprites = loadTexture("resources/menuSpritesheet.png");
 
-	for (int i = 0; i < 1; i++) {
-		string mapName = "resources/maps/level " + to_string(i + 1) + ".tmx";
+	for (int i = 0; i < 3; i++) {
+		string mapName = "resources/maps/level " + to_string(i) + ".tmx";
 		result = maps[i].load(SCREEN_WIDTH, SCREEN_HEIGHT, renderer, mapName.c_str(), physicsWorld);
 		if (!result) return false;
 	}
+
+	//levelSelectionLevel.load(SCREEN_WIDTH, SCREEN_HEIGHT, renderer, "resources/maps/levelSelection.tmx", physicsWorld);
 
 	// Load the player sprite
 	player = loadTexture("resources/playerSprite.png");
@@ -110,7 +112,7 @@ void Platformer::loop() {
 				quit = true;
 			}
 			else if (eventHandler.type == SDL_MOUSEBUTTONUP && eventHandler.button.button == SDL_BUTTON_LEFT) {
-				maps[currentLevel].dumpMovingPlatformData(false, NULL);
+				//maps[currentLevel].dumpMovingPlatformData(false, NULL);
 				pendingMouseEvent = true;
 			}
 			else if (eventHandler.type == SDL_KEYDOWN) {
@@ -174,7 +176,7 @@ Platformer::Platformer() {
 	currentScreenType = screenTypes::MAIN_MENU;
 	frameCount = 0;
 	muted = false;
-	selectingLevel = false;
+	//selectingLevel = false;
 }
 
 // Frees memory

@@ -85,9 +85,10 @@ void Platformer::respawnButton() {
 
 void Platformer::levelSelectButton() {
 	currentScreenType = screenTypes::GAME;
-	selectingLevel = true;
+	//selectingLevel = true;
+	currentLevel = 0;
 	createPhysics();
-	levelSelectionLevel.createHitboxes(physicsWorld);
+	maps[currentLevel].createHitboxes(physicsWorld);
 	if (!muted)
 		audioHandler.playMusic(audioHandler.GAME);
 }

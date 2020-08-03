@@ -1,0 +1,7 @@
+MOVING PLATFORMS:
+---------------------------------
+
+Moving platforms must be an object created on the object layer called "collisions". Select the layer, then select the insert polygon tool, or press the P key. Use this tool to create your shape,
+making sure that the finished shape is a closed loop. For now, moving platforms will only be rendered to the size of 1 tile, so make sure to keep your polygon around the size of the tile you are using.
+Polygons should also be kept to 8 points or less (for now). Once you have created the shape, make sure it is selected and open up its properties menu (right click if it isn't there already).
+In the "type" field of the properties, type in "mp" to set it to a moving platform. 

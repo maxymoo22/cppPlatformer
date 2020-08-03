@@ -64,8 +64,8 @@ void CollisionListener::BeginContact(b2Contact* contact) {
 	}
 
 	// Finally, we need to know when the player is on the ground. This stops them from jumping in mid air and flying around
-	if (fixtureAData == PLAYER_SENSOR && fixtureBData != LADDER && fixtureBData != DANGEROUS_TILE && fixtureBData != FINISH_POINT && fixtureBData != BUTTON ||
-		fixtureBData == PLAYER_SENSOR && fixtureAData != LADDER && fixtureAData != DANGEROUS_TILE && fixtureAData != FINISH_POINT && fixtureAData != BUTTON) {
+	if (fixtureAData == PLAYER_SENSOR && fixtureBData != LADDER && fixtureBData != DANGEROUS_TILE && fixtureBData < 100000 ||
+		fixtureBData == PLAYER_SENSOR && fixtureAData != LADDER && fixtureAData != DANGEROUS_TILE && fixtureAData < 100000) {
 		playerGroundContacts++;
 
 		// If fixture A is an entity, then we need to add it to the entity list. This will then be used to apply a kickback to it when the player walks
@@ -107,8 +107,8 @@ void CollisionListener::EndContact(b2Contact* contact) {
 		buttons[fixtureAData - BUTTON * 1000000]--;
 
 	// Finally, we need to know when the player is on the ground. This stops them from jumping in mid air and flying around
-	if (fixtureAData == PLAYER_SENSOR && fixtureBData != LADDER && fixtureBData != DANGEROUS_TILE && fixtureBData != FINISH_POINT && fixtureBData != BUTTON ||
-		fixtureBData == PLAYER_SENSOR && fixtureAData != LADDER && fixtureAData != DANGEROUS_TILE && fixtureAData != FINISH_POINT && fixtureAData != BUTTON) {
+	if (fixtureAData == PLAYER_SENSOR && fixtureBData != LADDER && fixtureBData != DANGEROUS_TILE && fixtureBData < 100000 ||
+		fixtureBData == PLAYER_SENSOR && fixtureAData != LADDER && fixtureAData != DANGEROUS_TILE && fixtureAData < 100000) {
 		playerGroundContacts--;
 
 		// If fixture A is an entity, then we need to add it to the entity list. This will then be used to apply a kickback to it when the player walks

@@ -56,12 +56,12 @@ private:
 	SDL_Texture* menuSprites;
 
 	// All of the levels will be in this array
-	GameLevel maps[2];
+	GameLevel maps[3];
 	int currentLevel;
 
 	// This is the level that players use to decide which level they want to go to
-	GameLevel levelSelectionLevel;
-	bool selectingLevel;
+	//GameLevel levelSelectionLevel;
+	//bool selectingLevel;
 
 	// The font handler class loads fonts and can draw them to the screen
 	FontHandler* fontHandler;

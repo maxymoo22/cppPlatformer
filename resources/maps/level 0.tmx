@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.4" tiledversion="1.4.1" orientation="orthogonal" renderorder="right-down" width="40" height="35" tilewidth="32" tileheight="32" infinite="0" nextlayerid="3" nextobjectid="17">
+ <tileset firstgid="1" name="tileset1" tilewidth="32" tileheight="32" tilecount="10" columns="10">
+  <image source="spritesheet.png" width="320" height="32"/>
+ </tileset>
+ <tileset firstgid="11" name="gate" tilewidth="32" tileheight="32" tilecount="4" columns="2">
+  <image source="finishPointSpritesheet.png" width="64" height="64"/>
+ </tileset>
+ <layer id="1" name="platforms" width="40" height="35">
+  <data encoding="base64" compression="zlib">
+   eJzt00EOgCAMRFFI1A3q/Y9rT0An1AYS/ktmQ+muUwoAAAAAQFWTs5tmuYU3ZS/DY3mFN2XvD9zffkb7MLMjyp+MjtCPGO9movMo72ai857Dci6ay/IB3MQC0w==
+  </data>
+ </layer>
+ <objectgroup id="2" name="collisions">
+  <object id="1" x="8" y="1088">
+   <polygon points="0,0 -8,8 -8,32 1272,32 1272,8 1264,0"/>
+  </object>
+  <object id="2" x="296" y="992">
+   <polygon points="0,0 -8,-8 -8,-28 -4,-32 756,-32 760,-28 760,-8 752,0"/>
+  </object>
+  <object id="3" x="292" y="800">
+   <polygon points="0,0 -4,4 -4,23 4,32 756,32 764,24 764,4 760,0"/>
+  </object>
+  <object id="4" x="292" y="672">
+   <polygon points="0,0 -4,4 -4,24 4,32 756,32 764,24 764,4 760,0"/>
+  </object>
+  <object id="6" type="entity" x="1088" y="1084">
+   <properties>
+    <property name="centerX" type="int" value="1104"/>
+    <property name="centerY" type="int" value="1072"/>
+    <property name="tileGID" type="int" value="8"/>
+   </properties>
+   <polygon points="0,0 4,4 28,4 32,0 32,-24 28,-28 4,-28 0,-24"/>
+  </object>
+  <object id="7" type="entity" x="768" y="800">
+   <properties>
+    <property name="centerX" type="int" value="752"/>
+    <property name="centerY" type="int" value="784"/>
+    <property name="tileGID" type="int" value="8"/>
+   </properties>
+   <polygon points="0,0 0,-32 -32,-32 -32,0"/>
+  </object>
+  <object id="8" type="entity" x="448" y="668">
+   <properties>
+    <property name="centerX" type="int" value="464"/>
+    <property name="centerY" type="int" value="656"/>
+    <property name="tileGID" type="int" value="8"/>
+   </properties>
+   <polygon points="0,0 4,4 28,4 32,0 32,-24 28,-28 4,-28 0,-24"/>
+  </object>
+  <object id="10" type="finish" x="288" y="1088">
+   <properties>
+    <property name="level" type="int" value="1"/>
+   </properties>
+   <polygon points="0,0 0,-48 16,-64 48,-64 64,-48 64,0"/>
+  </object>
+  <object id="11" type="finish" x="736" y="960">
+   <properties>
+    <property name="level" type="int" value="2"/>
+   </properties>
+   <polygon points="0,0 0,-48 16,-64 48,-64 63,-48 64,0"/>
+  </object>
+  <object id="12" type="ladder" x="1057" y="1088">
+   <polygon points="0,0 0,-160 31,-160 30,0"/>
+  </object>
+  <object id="13" type="ladder" x="287" y="960">
+   <polygon points="0,0 -30,0 -30,-160 0,-160"/>
+  </object>
+  <object id="14" type="ladder" x="1056" y="800">
+   <polygon points="0,0 0,-128 32,-128 32,0"/>
+  </object>
+  <object id="15" type="entity" x="856" y="544">
+   <properties>
+    <property name="centerX" type="int" value="848"/>
+    <property name="centerY" type="int" value="528"/>
+    <property name="tileGID" type="int" value="1"/>
+   </properties>
+   <polygon points="0,0 8,-8 8,-28 4,-32 -20,-32 -24,-28 -24,-8 -16,0"/>
+  </object>
+  <object id="16" type="entity" x="120" y="1088">
+   <properties>
+    <property name="centerX" type="int" value="112"/>
+    <property name="centerY" type="int" value="1072"/>
+    <property name="tileGID" type="int" value="1"/>
+   </properties>
+   <polygon points="0,0 8,-8 8,-28 4,-32 -20,-32 -24,-28 -24,-8 -16,0"/>
+  </object>
+ </objectgroup>
+</map>
