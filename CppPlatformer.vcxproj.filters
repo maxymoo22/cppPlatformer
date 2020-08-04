@@ -33,10 +33,10 @@
     <ClCompile Include="PlatformerButtons.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PlatformerVisuals.cpp">
+    <ClCompile Include="AudioHandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="AudioHandler.cpp">
+    <ClCompile Include="PlatformerScreenLoops.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

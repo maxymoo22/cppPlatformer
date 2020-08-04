@@ -161,7 +161,7 @@ xcopy "resources" "x64/Debug/resources" /E /I /Y /H</Command>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="PlatformerButtons.cpp" />
     <ClCompile Include="PlatformerLogic.cpp" />
-    <ClCompile Include="PlatformerVisuals.cpp" />
+    <ClCompile Include="PlatformerScreenLoops.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AudioHandler.h" />

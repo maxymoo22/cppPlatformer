@@ -69,10 +69,8 @@ bool Platformer::loadAssets() {
 		if (!result) return false;
 	}
 
-	//levelSelectionLevel.load(SCREEN_WIDTH, SCREEN_HEIGHT, renderer, "resources/maps/levelSelection.tmx", physicsWorld);
-
 	// Load the player sprite
-	player = loadTexture("resources/playerSprite.png");
+	player = loadTexture("resources/playerSpritesheet.png");
 
 	// Setup the physics for the current level in advance
 	createPhysics();
@@ -160,8 +158,11 @@ Platformer::Platformer() {
 	window = NULL;
 	renderer = NULL;
 	player = NULL;
+	playerTextureXOffset = 96;
+	animationFrameIndex = 0;
+	playerDirection = 1;
 	menuSprites = NULL;
-	currentLevel = 0;
+	currentLevel = 1;
 	fontHandler = NULL;
 	physicsWorld = NULL;
 	playerBody = NULL;
@@ -176,7 +177,6 @@ Platformer::Platformer() {
 	currentScreenType = screenTypes::MAIN_MENU;
 	frameCount = 0;
 	muted = false;
-	//selectingLevel = false;
 }
 
 // Frees memory
@@ -308,7 +308,7 @@ void Platformer::createPhysics() {
 	b2FixtureDef playerFixture;
 	playerFixture.shape = &collisionShape;
 	playerFixture.density = 1.0;
-	playerFixture.friction = 0.0;
+	playerFixture.friction = 0.01;
 	playerFixture.userData = (void*)PLAYER_BODY;
 	playerBody->CreateFixture(&playerFixture);
 
@@ -321,4 +321,35 @@ void Platformer::createPhysics() {
 	playerSensorFixture->SetUserData((void*)PLAYER_SENSOR);
 
 	collisionListener->SetPlayerBody(playerBody);
+}
+
+void Platformer::updatePlayerAnimation(bool movingSideways, bool movingVertical) {
+	if (collisionListener->playerGroundContacts > 0) {
+		if (!movingSideways) {
+			playerTextureXOffset = 96;
+			animationFrameIndex = 0.0;
+		}
+		else {
+			playerTextureXOffset = 32 * ((int)animationFrameIndex % 3) + 64;
+			animationFrameIndex += 1.0/10.0;
+			if (animationFrameIndex >= 3) animationFrameIndex = 0.0;
+		}
+	}
+
+	else if (collisionListener->playerLadderContacts > 0) {
+		if (movingVertical) {
+			playerTextureXOffset = 32 * ((int)animationFrameIndex % 2);
+			animationFrameIndex += 1.0 / 10.0;
+			if (animationFrameIndex >= 2) animationFrameIndex = 0.0;
+		}
+		else {
+			playerTextureXOffset = 96;
+			animationFrameIndex = 0.0;
+		}
+	}
+
+	else {
+		animationFrameIndex = 0.0;
+		playerTextureXOffset = 128;
+	}
 }

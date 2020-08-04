@@ -52,16 +52,17 @@ private:
 
 	// The player texture
 	SDL_Texture* player;
+	// Since the playe rhas multiple animation frames, we need to store an index to the current one. This is incremented by 32 (each texture is 32x32 px)
+	int playerTextureXOffset;
+	float animationFrameIndex;
+	bool playerDirection;
+
 	// This texture has the sprites that are rendered on the level selection screen and the instructions screen
 	SDL_Texture* menuSprites;
 
-	// All of the levels will be in this array
+	// All of the levels will be in this array, including the level selection level
 	GameLevel maps[3];
 	int currentLevel;
-
-	// This is the level that players use to decide which level they want to go to
-	//GameLevel levelSelectionLevel;
-	//bool selectingLevel;
 
 	// The font handler class loads fonts and can draw them to the screen
 	FontHandler* fontHandler;
@@ -130,10 +131,11 @@ private:
 
 	void creditsScreenLoop(bool pendingMouseEvent);
 	void instructionsScreenLoop(bool pendingMouseEvent);
-	void levelSelectScreenLoop(bool pendingMouseEvent);
 
 	// Checks if any map scrolling is needed based on the players position
 	void checkScrolling();
+
+	void updatePlayerAnimation(bool movingSideways, bool movingVertical);
 
 	// Checks if the given point is inside a rectangle. Utility function
 	bool isPointInRect(int x, int y, int rectX, int rectY, int width, int height);

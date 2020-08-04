@@ -107,10 +107,12 @@ void Platformer::gameScreenLoop(bool pendingMouseEvent, bool pendingKeyEvent) {
 	maps[currentLevel].render(camXOffset, camYOffset);
 
 	b2Vec2 playerPosVector = playerBody->GetPosition();
-	// This is a rectangle for the player sprites position on the screen. We need to take the camera offset into account
+	//  We need to take the camera offset into account
 	SDL_Rect playerRect = { playerPosVector.x * 32 - 16 - camXOffset, SCREEN_HEIGHT - (playerPosVector.y * 32 + 16) - camYOffset, 32, 32 };
+	SDL_Rect sourceRect = {playerTextureXOffset, 0, 32, 32};
 	// Draw the player sprite at it's position.
-	SDL_RenderCopy(renderer, player, NULL, &playerRect);
+	//SDL_RenderCopy(renderer, player, &sourceRect, &playerRect);
+	SDL_RenderCopyEx(renderer, player, &sourceRect, &playerRect, 0, NULL, (playerDirection) ? SDL_RendererFlip::SDL_FLIP_NONE : SDL_RendererFlip::SDL_FLIP_HORIZONTAL);
 
 	if (debugDrawHitboxes == true) {
 		// Draw the box2d stuff for debugging
@@ -222,6 +224,8 @@ void Platformer::gameScreenLoop(bool pendingMouseEvent, bool pendingKeyEvent) {
 
 	//##------------------------##//
 
+
+
 	// We only want to draw if the game isn't displaying any popups
 	if (paused == true || displayAreYouSure == true || playerDead == true) return;
 
@@ -239,17 +243,21 @@ void Platformer::gameScreenLoop(bool pendingMouseEvent, bool pendingKeyEvent) {
 
 	// If the player pressed space then we can apply a jump impulse, but only if they are on the gorund.
 	// We also need to make sure that enough time has passed to stop the player spam jumping.
-	else if ((keyStates[SDL_SCANCODE_SPACE] || keyStates[SDL_SCANCODE_UP]) && collisionListener->playerGroundContacts > 0 && SDL_GetTicks() - playerJumpStartTime >= 150) {
+	else if ((keyStates[SDL_SCANCODE_SPACE] || keyStates[SDL_SCANCODE_UP]) && collisionListener->playerGroundContacts > 0 && SDL_GetTicks() - playerJumpStartTime >= 200) {
 		playerBody->ApplyLinearImpulseToCenter(b2Vec2(0.0, 10.0), true);
 		playerJumpStartTime = SDL_GetTicks();
 	}
 
 	// This stuff is for moving the player
 	b2Vec2 leftRightImpulse;
-	if (keyStates[SDL_SCANCODE_LEFT] && !keyStates[SDL_SCANCODE_RIGHT])
+	if (keyStates[SDL_SCANCODE_LEFT] && !keyStates[SDL_SCANCODE_RIGHT]) {
 		leftRightImpulse = b2Vec2(-5 - velocity.x, 0);
-	else if (keyStates[SDL_SCANCODE_RIGHT] && !keyStates[SDL_SCANCODE_LEFT])
+		playerDirection = 0;
+	}
+	else if (keyStates[SDL_SCANCODE_RIGHT] && !keyStates[SDL_SCANCODE_LEFT]) {
 		leftRightImpulse = b2Vec2(5 - velocity.x, 0);
+		playerDirection = 1;
+	}
 	else
 		leftRightImpulse = b2Vec2(-velocity.x, 0);
 	playerBody->ApplyLinearImpulseToCenter(leftRightImpulse, true);
@@ -280,6 +288,8 @@ void Platformer::gameScreenLoop(bool pendingMouseEvent, bool pendingKeyEvent) {
 
 	// Check if any map scrolling is needed
 	checkScrolling();
+
+	updatePlayerAnimation(keyStates[SDL_SCANCODE_LEFT] != keyStates[SDL_SCANCODE_RIGHT], keyStates[SDL_SCANCODE_UP] != keyStates[SDL_SCANCODE_DOWN]);
 
 	if (collisionListener->playerDangerContacts > 0) {
 		playerDead = true;
