@@ -105,14 +105,25 @@ void Platformer::gameScreenLoop(bool pendingMouseEvent, bool pendingKeyEvent) {
 
 	// Draw the level
 	maps[currentLevel].render(camXOffset, camYOffset);
+	
+	if (!playerDead) {
+		b2Vec2 playerPosVector = playerBody->GetPosition();
+		//  We need to take the camera offset into account
+		SDL_Rect playerRect = { playerPosVector.x * 32 - 16 - camXOffset, SCREEN_HEIGHT - (playerPosVector.y * 32 + 16) - camYOffset, 32, 32 };
+		SDL_Rect sourceRect = { playerTextureXOffset, 0, 32, 32 };
+		// Draw the player sprite at its position.
+		SDL_RenderCopyEx(renderer, player, &sourceRect, &playerRect, 0, NULL, (playerDirection) ? SDL_RendererFlip::SDL_FLIP_NONE : SDL_RendererFlip::SDL_FLIP_HORIZONTAL);
+	}
+	// If the player is dead then we want to render the death particles
+	else {
+		for (auto& deathParticle : deathParticles) {
+			b2Vec2 p = deathParticle.body->GetPosition();
+			SDL_Rect sourceRect = {(deathParticle.colorIndex % 4) * 8, (deathParticle.colorIndex % 4) * 8, 8, 8};
+			SDL_Rect destRect = {p.x * 32 - 4 - camXOffset, SCREEN_HEIGHT - (p.y * 32 + 4) - camYOffset, 8, 8};
 
-	b2Vec2 playerPosVector = playerBody->GetPosition();
-	//  We need to take the camera offset into account
-	SDL_Rect playerRect = { playerPosVector.x * 32 - 16 - camXOffset, SCREEN_HEIGHT - (playerPosVector.y * 32 + 16) - camYOffset, 32, 32 };
-	SDL_Rect sourceRect = {playerTextureXOffset, 0, 32, 32};
-	// Draw the player sprite at it's position.
-	//SDL_RenderCopy(renderer, player, &sourceRect, &playerRect);
-	SDL_RenderCopyEx(renderer, player, &sourceRect, &playerRect, 0, NULL, (playerDirection) ? SDL_RendererFlip::SDL_FLIP_NONE : SDL_RendererFlip::SDL_FLIP_HORIZONTAL);
+			SDL_RenderCopyEx(renderer, particleTexture, &sourceRect, &destRect, (double)deathParticle.body->GetAngle() * -180.0 / b2_pi, NULL, SDL_FLIP_NONE);
+		}
+	}
 
 	if (debugDrawHitboxes == true) {
 		// Draw the box2d stuff for debugging
@@ -225,9 +236,14 @@ void Platformer::gameScreenLoop(bool pendingMouseEvent, bool pendingKeyEvent) {
 	//##------------------------##//
 
 
+	if (playerDead) {
+		// Step the physics forwards
+		physicsWorld->Step(1.0 / 80.0, 8, 3);
+		return;
+	}
 
 	// We only want to draw if the game isn't displaying any popups
-	if (paused == true || displayAreYouSure == true || playerDead == true) return;
+	if (paused == true || displayAreYouSure == true) return;
 
 	b2Vec2 velocity = playerBody->GetLinearVelocity();
 
@@ -263,7 +279,7 @@ void Platformer::gameScreenLoop(bool pendingMouseEvent, bool pendingKeyEvent) {
 	playerBody->ApplyLinearImpulseToCenter(leftRightImpulse, true);
 
 	// Once we have moved the player, we can move any entities under the player based on how the player moved
-	b2Vec2 locationOfImpulseInWorldCoords = playerBody->GetWorldPoint(b2Vec2(0, -0.5));
+	b2Vec2 locationOfImpulseInWorldCoords = playerBody->GetWorldPoint(b2Vec2(0, -0.6));
 	for (auto& underfootFixture : collisionListener->entityFixturesUnderfoot)
 		underfootFixture->GetBody()->ApplyLinearImpulse(b2Vec2(-1 * leftRightImpulse.x / 13, 0), locationOfImpulseInWorldCoords, true);
 
@@ -276,7 +292,6 @@ void Platformer::gameScreenLoop(bool pendingMouseEvent, bool pendingKeyEvent) {
 		playerBody->ApplyLinearImpulseToCenter(b2Vec2((*collisionListener->movingPlatforms.begin())->GetLinearVelocity().x, 0), true);
 
 	if (keyStates[SDL_SCANCODE_RETURN] && currentLevel == 0 && collisionListener->playerFinishPointContacts > 0) {
-		//selectingLevel = false;
 		// We need to delete all of the physics for the level and switch to the new level
 		currentLevel = collisionListener->levelEntranceNum;
 		createPhysics();
@@ -291,18 +306,43 @@ void Platformer::gameScreenLoop(bool pendingMouseEvent, bool pendingKeyEvent) {
 
 	updatePlayerAnimation(keyStates[SDL_SCANCODE_LEFT] != keyStates[SDL_SCANCODE_RIGHT], keyStates[SDL_SCANCODE_UP] != keyStates[SDL_SCANCODE_DOWN]);
 
-	if (collisionListener->playerDangerContacts > 0) {
+	if (collisionListener->playerDangerContacts > 0 || playerBody->GetPosition().y < -40) {
 		playerDead = true;
 		Mix_PauseMusic();
 		Mix_RewindMusic();
-		// Don't want to run the end of level check if the player is dead
-		return;
+
+		// Dont need particles if the player fell below the map
+		if (playerBody->GetPosition().y < -40) return;
+
+		b2Vec2 p = playerBody->GetPosition();
+		// We don't need the player anymore
+		physicsWorld->DestroyBody(playerBody);
+		collisionListener->nullPlayerBody();
+		playerBody = NULL;
+
+		srand(SDL_GetTicks());
+		for (int i = 0; i < 20; i++) {
+			b2BodyDef particleDef;
+			particleDef.type = b2_dynamicBody;
+			particleDef.position.Set(p.x, p.y);
+			b2Body* particleBody = physicsWorld->CreateBody(&particleDef);
+
+			DeathParticle particle = {particleBody, rand() % 16};
+			deathParticles.push_back(particle);
+
+			b2PolygonShape particleShape;
+			// The hitbox should be a bit smaller than the actual rendered particle since box2d collides with polygon skins instead of the polygon surface
+			particleShape.SetAsBox(0.1, 0.1);
+			particleBody->CreateFixture(&particleShape, 1.0);
+
+			particleBody->ApplyLinearImpulseToCenter(b2Vec2((rand() % 2) / 1.9, (rand() % 2) / 1.9), true);
+		}
 	}
 
 	// If the player has reached the end then (obviously) we need to go to the next level
-	if (collisionListener->playerFinishPointContacts > 0 && currentLevel > 0) {
+	else if (collisionListener->playerFinishPointContacts > 0 && currentLevel > 0) {
 		currentLevel++;
-		if (currentLevel == 3)
+		if (currentLevel == 4)
 			currentLevel = 1;
 
 		camXOffset = 0;

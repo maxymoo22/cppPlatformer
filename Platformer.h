@@ -57,11 +57,12 @@ private:
 	float animationFrameIndex;
 	bool playerDirection;
 
+	SDL_Texture* particleTexture;
 	// This texture has the sprites that are rendered on the level selection screen and the instructions screen
 	SDL_Texture* menuSprites;
 
 	// All of the levels will be in this array, including the level selection level
-	GameLevel maps[3];
+	GameLevel maps[4];
 	int currentLevel;
 
 	// The font handler class loads fonts and can draw them to the screen
@@ -83,6 +84,13 @@ private:
 	Box2dDraw debugDrawer;
 
 	bool debugDrawHitboxes;
+
+	// These particles make a nice effect when the player dies.
+	struct DeathParticle {
+		b2Body* body;
+		short colorIndex;
+	};
+	vector<Platformer::DeathParticle> deathParticles;
 
 	// This is used for detecting if sufficient time has passed for the player to jump. We need this because when the player jumps, for a few milliseconds the sensor
 	// is still touchnig the ground. This means that a few more impulses will be applied, making the player jump really high and fast.

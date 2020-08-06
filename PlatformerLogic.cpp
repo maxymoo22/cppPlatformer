@@ -62,8 +62,9 @@ bool Platformer::loadAssets() {
 	bool result = true;
 
 	menuSprites = loadTexture("resources/menuSpritesheet.png");
+	particleTexture = loadTexture("resources/particles.png");
 
-	for (int i = 0; i < 3; i++) {
+	for (int i = 0; i < 4; i++) {
 		string mapName = "resources/maps/level " + to_string(i) + ".tmx";
 		result = maps[i].load(SCREEN_WIDTH, SCREEN_HEIGHT, renderer, mapName.c_str(), physicsWorld);
 		if (!result) return false;
@@ -158,7 +159,7 @@ Platformer::Platformer() {
 	window = NULL;
 	renderer = NULL;
 	player = NULL;
-	playerTextureXOffset = 96;
+	playerTextureXOffset = 128;
 	animationFrameIndex = 0;
 	playerDirection = 1;
 	menuSprites = NULL;
@@ -177,9 +178,10 @@ Platformer::Platformer() {
 	currentScreenType = screenTypes::MAIN_MENU;
 	frameCount = 0;
 	muted = false;
+	particleTexture = NULL;
 }
 
-// Frees memory
+// Free memory
 Platformer::~Platformer() {
 	// Delete the player sprite texture
 	SDL_DestroyTexture(player);
@@ -187,6 +189,8 @@ Platformer::~Platformer() {
 
 	SDL_DestroyTexture(menuSprites);
 	menuSprites = NULL;
+	SDL_DestroyTexture(particleTexture);
+	particleTexture = NULL;
 
 	// Destroy window and renderer
 	SDL_DestroyWindow(window);
@@ -281,6 +285,9 @@ bool Platformer::isPointInButton(int x, int y, Button& button) {
 }
 
 void Platformer::createPhysics() {
+	// If the user is respawning this function will be called. If they are respawning, the player was previously dead and had particles. We need to delete them
+	deathParticles.clear();
+
 	// Clear the contact listener
 	collisionListener->clear();
 	// We also need to clear the previous world if it existed
@@ -308,7 +315,7 @@ void Platformer::createPhysics() {
 	b2FixtureDef playerFixture;
 	playerFixture.shape = &collisionShape;
 	playerFixture.density = 1.0;
-	playerFixture.friction = 0.01;
+	playerFixture.friction = 0.0;
 	playerFixture.userData = (void*)PLAYER_BODY;
 	playerBody->CreateFixture(&playerFixture);
 
@@ -326,11 +333,11 @@ void Platformer::createPhysics() {
 void Platformer::updatePlayerAnimation(bool movingSideways, bool movingVertical) {
 	if (collisionListener->playerGroundContacts > 0) {
 		if (!movingSideways) {
-			playerTextureXOffset = 96;
+			playerTextureXOffset = 128;
 			animationFrameIndex = 0.0;
 		}
 		else {
-			playerTextureXOffset = 32 * ((int)animationFrameIndex % 3) + 64;
+			playerTextureXOffset = 32 * ((int)animationFrameIndex % 3) + 96;
 			animationFrameIndex += 1.0/10.0;
 			if (animationFrameIndex >= 3) animationFrameIndex = 0.0;
 		}
@@ -343,13 +350,13 @@ void Platformer::updatePlayerAnimation(bool movingSideways, bool movingVertical)
 			if (animationFrameIndex >= 2) animationFrameIndex = 0.0;
 		}
 		else {
-			playerTextureXOffset = 96;
+			playerTextureXOffset = 64;
 			animationFrameIndex = 0.0;
 		}
 	}
 
 	else {
 		animationFrameIndex = 0.0;
-		playerTextureXOffset = 128;
+		playerTextureXOffset = 160;
 	}
 }

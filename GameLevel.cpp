@@ -119,9 +119,7 @@ void GameLevel::render(float camXOffset, float camYOffset) {
 			// Skip this tile
 			continue;
 
-		// The tile should be rotated around this point so it stays in line with the hitbox
-		SDL_Point rotationPoint = {entityPos.x, entityPos.y};
-		SDL_RenderCopyEx(renderer, tilesets[entity.tilesetGID].second, &entity.spriteRect, &destinationRect, (double)(entity.entityBody->GetAngle() * (float)-180) / 3.141592653589793, /*&rotationPoint*/NULL, SDL_FLIP_NONE);
+		SDL_RenderCopyEx(renderer, tilesets[entity.tilesetGID].second, &entity.spriteRect, &destinationRect, (double)entity.entityBody->GetAngle() * -180.0 / 3.141592653589793, NULL, SDL_FLIP_NONE);
 	}
 
 	for (auto platformIDPair : movingPlatforms) {
@@ -300,7 +298,7 @@ void GameLevel::createEntity(tmx::Object* entityObject, b2World* world, bool mov
 	b2FixtureDef fixtureDef;
 	fixtureDef.shape = &collisionShape;
 	fixtureDef.density = 1.0;
-	fixtureDef.friction = 5.0;
+	fixtureDef.friction = 3.0;
 	fixtureDef.userData = movingPlatform ? (void*)MOVING_PLATFORM : (void*)ENTITY;
 	entityBody->CreateFixture(&fixtureDef);
 
@@ -329,17 +327,14 @@ void GameLevel::createEntity(tmx::Object* entityObject, b2World* world, bool mov
 		bool usesButton = false;
 		if(objectProperties.count("usesButton") > 0)
 			usesButton = objectProperties["usesButton"].getBoolValue();
-		cout << "\n---------------------\nUses button: " << usesButton << "\n-----------------------------------\n\n";
 
 		MovingPlatform movingPlatform = { tset_gid, spriteRect, entityBody, (int)movementType, usesButton, !usesButton, horizontalMovementBoundaries, verticalMovementBoundaries, MPVelocity, direction };
-		dumpMovingPlatformData(true, &movingPlatform);
 
 		// Only start the platform if it doesn't use a button
 		if (usesButton == false)
 			entityBody->SetLinearVelocity(b2Vec2(MPVelocity.x, MPVelocity.y));
 
 		movingPlatforms.insert(make_pair((int)entityObject->getUID(), movingPlatform));
-		//cout << "Size of moving platforms map: " << movingPlatforms.size() << endl;
 	}
 	else {
 		Entity entity = { tset_gid, spriteRect, entityBody };

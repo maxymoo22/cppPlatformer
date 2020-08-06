@@ -5,9 +5,8 @@ CollisionListener::CollisionListener() {
 	levelEntranceNum = -1;
 }
 
-void CollisionListener::SetPlayerBody(b2Body* body) {
-	playerBody = body;
-}
+void CollisionListener::SetPlayerBody(b2Body* body) { playerBody = body; }
+void CollisionListener::nullPlayerBody() { playerBody = NULL; }
 
 // We need a way of resetting everything
 void CollisionListener::clear() {
@@ -77,7 +76,7 @@ void CollisionListener::BeginContact(b2Contact* contact) {
 	}
 
 	// If the player is on a ladder then they shouldn't have gravity
-	if (playerLadderContacts > 0)
+	if (playerLadderContacts > 0 && playerBody != NULL)
 		playerBody->SetGravityScale(0);
 }
 
@@ -120,7 +119,7 @@ void CollisionListener::EndContact(b2Contact* contact) {
 	}
 
 	// If the player is no longer on a ladder then they should have the normal gravity
-	if (playerLadderContacts < 1)
+	if (playerLadderContacts < 1 && playerBody != NULL)
 		playerBody->SetGravityScale(1);
 }
 

@@ -22,7 +22,11 @@ using namespace std;
 class CollisionListener : public b2ContactListener {
 public:
 	CollisionListener();
+
 	void SetPlayerBody(b2Body* body);
+	// When the player dies, it will be removed so we need to null it to avoid calling methods on non-existent memory
+	void nullPlayerBody();
+
 	void clear();
 
 	void BeginContact(b2Contact* contact);
