@@ -294,6 +294,7 @@ void Platformer::gameScreenLoop(bool pendingMouseEvent, bool pendingKeyEvent) {
 	if (keyStates[SDL_SCANCODE_RETURN] && currentLevel == 0 && collisionListener->playerFinishPointContacts > 0) {
 		// We need to delete all of the physics for the level and switch to the new level
 		currentLevel = collisionListener->levelEntranceNum;
+		writeUserData();
 		createPhysics();
 		maps[currentLevel].createHitboxes(physicsWorld);
 	}
@@ -344,6 +345,8 @@ void Platformer::gameScreenLoop(bool pendingMouseEvent, bool pendingKeyEvent) {
 		currentLevel++;
 		if (currentLevel == 4)
 			currentLevel = 1;
+
+		writeUserData();
 
 		camXOffset = 0;
 		camYOffset = 0;

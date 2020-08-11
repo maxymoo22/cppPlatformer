@@ -35,8 +35,6 @@ void Platformer::yesButton() {
 	camXOffset = 0;
 	camYOffset = 0;
 
-	/*playerBody->SetTransform(b2Vec2(3.5, 2.5), 0);
-	playerBody->ApplyLinearImpulseToCenter(b2Vec2(-1 * playerBody->GetLinearVelocity().x, -1 * playerBody->GetLinearVelocity().y), true);*/
 	// This will clear the physics for this world and setup the new stuff for next time. Even though we aren't switching level we still do this bcs it resets everything safely
 	createPhysics();
 	maps[currentLevel].createHitboxes(physicsWorld);
@@ -68,11 +66,13 @@ void Platformer::restartLevelButton() {
 void Platformer::muteButton() {
 	muted = true;
 	audioHandler.mute();
+	writeUserData();
 }
 
 void Platformer::unmuteButton() {
 	muted = false;
 	audioHandler.unmute((int)currentScreenType, paused);
+	writeUserData();
 }
 
 void Platformer::respawnButton() {

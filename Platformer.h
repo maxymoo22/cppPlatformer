@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
-#include <functional>
 
 #include <SDL.h>
 #include <SDL_image.h>
@@ -145,11 +144,12 @@ private:
 
 	void updatePlayerAnimation(bool movingSideways, bool movingVertical);
 
-	// Checks if the given point is inside a rectangle. Utility function
-	bool isPointInRect(int x, int y, int rectX, int rectY, int width, int height);
+	// Checks if the given point is inside a button. Utility function
 	bool isPointInButton(int x, int y, Button& button);
 
 	void createPhysics();
+
+	void writeUserData();
 
 
 	//## ----- BUTTTON ACTIONS ----- ##//
