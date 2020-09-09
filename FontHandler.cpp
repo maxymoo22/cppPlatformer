@@ -87,7 +87,7 @@ void FontHandler::renderFont(string fontIdentifier, string text, float x, float 
 		// Go through each letter of the text
 		for (int c = 0; c < substrings[i].size(); c++) {
 			// The rectangle that decides where to render the texture on the screen
-			SDL_Rect destinationRect = { x, y, font.width, font.height };
+			SDL_Rect destinationRect = { (int)x, (int)y, font.width, font.height };
 			SDL_RenderCopy(renderer, font.textures[substrings[i][c]], NULL, &destinationRect);
 
 			// Now that we've rendered, we need to increase the starting position for the next character

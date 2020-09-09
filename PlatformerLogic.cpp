@@ -24,6 +24,7 @@ Platformer::Platformer() {
 	frameCount = 0;
 	muted = false;
 	particleTexture = NULL;
+	TILE_SIZE = 0;
 }
 
 // Free memory
@@ -53,7 +54,8 @@ Platformer::~Platformer() {
 	delete fontHandler;
 	fontHandler = NULL;
 
-	cout << "\nAverage FPS: " << frameCount / (SDL_GetTicks() / 1000) << endl;
+	SDL_Log("%s%d", "\nAverage FPS: ", frameCount / (SDL_GetTicks() / 1000));
+	//cout << "\nAverage FPS: " << frameCount / (SDL_GetTicks() / 1000) << endl;
 	SDL_Delay(1000);
 
 	// Quit SDL subsystems
@@ -97,6 +99,12 @@ bool Platformer::init() {
 	// Store the screen dimensions for use in rendering the textures at the correct coordinates
 	SDL_GetRendererOutputSize(renderer, &SCREEN_WIDTH, &SCREEN_HEIGHT);
 
+	// Used to scale images up or down for different dpi displays like mobile phones
+	float ppi;
+	SDL_GetDisplayDPI(0, NULL, &ppi, NULL);
+	TILE_SIZE = (int)(ppi * 64 / 192);
+	cout << "PPI: " << ppi << "\nTile size: " << TILE_SIZE << endl;
+
 	// Initialize PNG loading
 	if (!(IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG))
 	{
@@ -119,7 +127,7 @@ bool Platformer::init() {
 	// This class will handle the stuff when the player touches the ground
 	collisionListener = new CollisionListener();
 	// For debugging
-	debugDrawer = Box2dDraw(renderer, SCREEN_HEIGHT);
+	debugDrawer = Box2dDraw(renderer, SCREEN_HEIGHT, TILE_SIZE);
 	debugDrawer.SetFlags(b2Draw::e_shapeBit | b2Draw::e_centerOfMassBit);
 
 	return true;
@@ -163,7 +171,7 @@ bool Platformer::loadAssets() {
 
 	for (int i = 0; i < 4; i++) {
 		string mapName = "resources/maps/level " + to_string(i) + ".tmx";
-		result = maps[i].load(SCREEN_WIDTH, SCREEN_HEIGHT, renderer, mapName.c_str(), physicsWorld);
+		result = maps[i].load(SCREEN_WIDTH, SCREEN_HEIGHT, TILE_SIZE, renderer, mapName.c_str(), "resources/maps/", physicsWorld);
 		if (!result) return false;
 	}
 
@@ -194,6 +202,9 @@ bool Platformer::loadAssets() {
 
 // Keeps looping and calls the right draw+logic function until the user quits
 void Platformer::loop() {
+	// The timestamp of the last box2d debug draw toggle. Only used on mobile. This is to only make the debug draw toggle once during a multigesture.
+	Uint32 ddPrevTimestamp = 0;
+
 	// Keep looping until the user quits the game
 	while (quit == false) {
 		frameCount++;
@@ -201,13 +212,16 @@ void Platformer::loop() {
 		bool pendingMouseEvent = false;
 		bool pendingKeyEvent = false;
 
-		// If there is no event then we dont need to handle anything, so we should check
-		if (SDL_PollEvent(&eventHandler) == 1) {
+		// Loop through every event until we have handled them all
+		while (SDL_PollEvent(&eventHandler) == 1) {
 			// User requests to quit the application
 			if (eventHandler.type == SDL_QUIT) {
 				printf("Quitting\n");
 				quit = true;
 			}
+
+			// Handle keyboard events if we are on non-mobile
+			#ifndef MOBILE
 			else if (eventHandler.type == SDL_MOUSEBUTTONUP && eventHandler.button.button == SDL_BUTTON_LEFT) {
 				//maps[currentLevel].dumpMovingPlatformData(false, NULL);
 				pendingMouseEvent = true;
@@ -225,6 +239,36 @@ void Platformer::loop() {
 					cout << "Box2d debugging toggled\n";
 				}
 			}
+
+			// Otherwise we need to deal with the touchscreen
+			#else
+			else if (eventHandler.type == SDL_FINGERUP) {
+				pendingMouseEvent = true;
+				fingerLocations.erase(eventHandler.tfinger.fingerId);
+			}
+			else if (eventHandler.type == SDL_FINGERDOWN)
+				fingerLocations.insert(make_pair(eventHandler.tfinger.fingerId, b2Vec2(eventHandler.tfinger.x * SCREEN_WIDTH, eventHandler.tfinger.y * SCREEN_HEIGHT)));
+			
+			// We do need this one to catch the case where a user puts down a finger outside of a button, and then slides it onto a button. This case means
+			// the position will not get updated if we only have a finger up and down event handler.
+			else if (eventHandler.type == SDL_FINGERMOTION) {
+				//SDL_Log("finger motion");
+				fingerLocations[eventHandler.tfinger.fingerId].x = eventHandler.tfinger.x * SCREEN_WIDTH;
+				fingerLocations[eventHandler.tfinger.fingerId].y = eventHandler.tfinger.y * SCREEN_HEIGHT;
+			}
+
+			else if (eventHandler.type == SDL_MULTIGESTURE) {
+				// On a touchscreen device we do a super secret agent finger rotation move to toggle box2D DeBuG DraWinG
+				if (abs(eventHandler.mgesture.dTheta) > b2_pi / 60.0) {
+					if (eventHandler.mgesture.timestamp - ddPrevTimestamp >= 1000) {
+						debugDrawHitboxes = !debugDrawHitboxes;
+						SDL_Log("Box2d debugging toggled");
+					}
+
+					ddPrevTimestamp = eventHandler.mgesture.timestamp;
+				}
+			}
+			#endif
 		}
 
 		// Set renderer color back to light blue because it will be changed for drawing primitives
@@ -255,8 +299,8 @@ void Platformer::loop() {
 
 // Checks if any map scrolling is needed based on the players position
 void Platformer::checkScrolling() {
-	float xPos = (playerBody->GetPosition().x - 0.5) * 32;
-	float yPos = SCREEN_HEIGHT - ((playerBody->GetPosition().y + 0.5) * 32);
+	float xPos = (playerBody->GetPosition().x - 0.5) * TILE_SIZE;
+	float yPos = SCREEN_HEIGHT - ((playerBody->GetPosition().y + 0.5) * TILE_SIZE);
 
 	// If the distance from the player's left side to the left side of the viewport is less than the minimum margin
 	// then we need to calculate how much we need to change the viewport by
@@ -380,6 +424,19 @@ bool Platformer::isPointInButton(int x, int y, Button& button) {
 		return false;
 
 	return true;
+}
+
+// Checks if the any of the given points are inside a button. Utility function
+bool Platformer::arePointsInButton(unordered_map<SDL_FingerID, b2Vec2> fingerLocations, Button& button) {
+	for (auto pair : fingerLocations) {
+		b2Vec2 location = pair.second;
+
+		// If any of the points are in the button then we are good to go
+		if (location.x > button.x && location.x < button.x + button.width && location.y > button.y && location.y < button.y + button.height)
+			return true;
+	}
+
+	return false;
 }
 
 void Platformer::writeUserData() {

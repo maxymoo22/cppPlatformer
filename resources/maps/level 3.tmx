@@ -4,6 +4,9 @@
   <property name="useObjectCollisions" type="bool" value="true"/>
  </properties>
  <tileset firstgid="1" name="tileset1" tilewidth="32" tileheight="32" tilecount="10" columns="10">
+  <properties>
+   <property name="relative_path" value="spritesheet.png"/>
+  </properties>
   <image source="spritesheet.png" width="320" height="32"/>
  </tileset>
  <layer id="3" name="danger" width="100" height="100">

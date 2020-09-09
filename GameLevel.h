@@ -80,7 +80,7 @@ public:
 	GameLevel();
 	~GameLevel();
 
-	bool load(int screenWidth, int screenHeight, SDL_Renderer* ren, const char* filename, b2World* world);
+	bool load(int screenWidth, int screenHeight, int tileSize, SDL_Renderer* ren, const char* filename, string mapDirectory, b2World* world);
 	void render(float camXOffset, float camYOffset);
 	void createHitboxes(b2World* world);
 
@@ -107,6 +107,8 @@ private:
 	// Dimensions of screen
 	int SCREEN_WIDTH = 0;
 	int SCREEN_HEIGHT = 0;
+	// Size of each tile in pixels. Used to map the box2d things to visual items correctly
+	int tileSize = 0;
 
 	// We need a pointer to the renderer to render and create textures for this level
 	SDL_Renderer* renderer = NULL;

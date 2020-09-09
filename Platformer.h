@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
+#include <unordered_map>
 
 #include <SDL.h>
 #include <SDL_image.h>
@@ -21,9 +22,12 @@
 
 // These constants are the minimum distances that need to be between the playerand the edge of the viewport
 // They will be used in calculating when and by how much to scroll the vieport
-#define PLAYER_SPRITE_LR_MARGIN 300
-#define PLAYER_SPRITE_BOTTOM_MARGIN 255
-#define PLAYER_SPRITE_TOP_MARGIN 200
+#define PLAYER_SPRITE_LR_MARGIN (int)(0.3 * SCREEN_WIDTH)
+#define PLAYER_SPRITE_BOTTOM_MARGIN (int)(0.34 * SCREEN_HEIGHT)
+#define PLAYER_SPRITE_TOP_MARGIN (int)(0.266666 * SCREEN_HEIGHT)
+
+#define MOBILE
+//#undef MOBILE
 
 using namespace std;
 
@@ -43,6 +47,7 @@ public:
 private:
 	int SCREEN_WIDTH = 1000;
 	int SCREEN_HEIGHT = 750;
+	int TILE_SIZE;
 
 	// The window renderer. Needed for rendering textures
 	SDL_Renderer* renderer;
@@ -87,9 +92,14 @@ private:
 	// These particles make a nice effect when the player dies.
 	struct DeathParticle {
 		b2Body* body;
-		short colorIndex;
+		char colorIndex;
 	};
 	vector<Platformer::DeathParticle> deathParticles;
+
+	// We need to keep a map of all of the fingers currently pressing down
+	#ifdef MOBILE
+	unordered_map<SDL_FingerID, b2Vec2> fingerLocations;
+	#endif
 
 	// This is used for detecting if sufficient time has passed for the player to jump. We need this because when the player jumps, for a few milliseconds the sensor
 	// is still touchnig the ground. This means that a few more impulses will be applied, making the player jump really high and fast.
@@ -146,6 +156,8 @@ private:
 
 	// Checks if the given point is inside a button. Utility function
 	bool isPointInButton(int x, int y, Button& button);
+	// Checks if the any of the given points are inside a button. Utility function
+	bool arePointsInButton(unordered_map<SDL_FingerID, b2Vec2> fingerLocations, Button& button);
 
 	void createPhysics();
 

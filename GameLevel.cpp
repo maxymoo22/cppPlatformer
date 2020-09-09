@@ -3,14 +3,26 @@
 GameLevel::GameLevel() {}
 
 // Loads the map and its tileset. Returns false if the map couldn't be loaded
-bool GameLevel::load(int screenWidth, int screenHeight, SDL_Renderer* ren, const char* mapFilename, b2World* world) {
+bool GameLevel::load(int screenWidth, int screenHeight, int tileSize, SDL_Renderer* ren, const char* mapFilename, string mapDirectory, b2World* world) {
 	SCREEN_WIDTH = screenWidth;
 	SCREEN_HEIGHT = screenHeight;
+	this->tileSize = tileSize;
 	renderer = ren;
 
+	// We cant just use map.load because it uses standard ifstream instead of SDL's rwops. This means it cant read from the assets on an android device.
+	// Instead, we use SDL_RWops to read the map into a buffer, convert it to a string and then load the map from that string.
+	SDL_RWops* mapFile = SDL_RWFromFile(mapFilename, "r");
+	cout << "buf size for map: " << mapFile->size(mapFile) << endl;
+	char* mapFileBuffer = new char[mapFile->size(mapFile)];
+	SDL_RWread(mapFile, mapFileBuffer, mapFile->size(mapFile), 1);
+	SDL_RWclose(mapFile);
+
+	string mapFileString = string(mapFileBuffer);
+	delete[] mapFileBuffer;
+
 	tmx::Map tiledMap;
-	// Check for unsuccesful map load
-	if (tiledMap.load(mapFilename) == false) {
+	if (tiledMap.loadFromString(mapFileString, "") == false) {
+		// Check for unsuccesful map load
 		std::cout << "Failed to load map" << endl;
 		return false;
 	}
@@ -26,8 +38,10 @@ bool GameLevel::load(int screenWidth, int screenHeight, SDL_Renderer* ren, const
 		if (tileset.getImagePath() == "")
 			continue;
 
+		cout << "Tileset image path: " << (mapDirectory + tileset.getProperties()[0].getStringValue()).c_str() << endl;
+
 		// Load the image and then create the texture it
-		SDL_Surface* surface = IMG_Load(tileset.getImagePath().c_str());
+		SDL_Surface* surface = IMG_Load((mapDirectory + tileset.getProperties()[0].getStringValue()).c_str());
 		// Add the tileset texture to the map
 		tilesets.insert(make_pair(tileset.getFirstGID(), make_pair(tileset.getLastGID(), SDL_CreateTextureFromSurface(renderer, surface))));
 		// We can free the unused surface as we no longer need it (because we have a texture)
@@ -98,7 +112,7 @@ bool GameLevel::getTileSourceRect(int tileGID, int* tset_gid, SDL_Rect* outputRe
 void GameLevel::render(float camXOffset, float camYOffset) {
 	for (Tile tile : tiles) {
 		// Creating a rectangle for the tiles destination on the screen. Since we have a camera, we need to subtract the camera offset to give a scrolling effect
-		SDL_Rect destinationRect = { (int)(tile.x * 32 - camXOffset), (int)(SCREEN_HEIGHT - (height * 32 - tile.y * 32) - camYOffset), 32, 32 };
+		SDL_Rect destinationRect = { (int)(tile.x * tileSize - camXOffset), (int)(SCREEN_HEIGHT - (height * tileSize - tile.y * tileSize) - camYOffset), tileSize, tileSize };
 
 		// We can skip rendering the tile if it is outside the camera as we wont be seeing it anyway
 		if (isTileInRect(&destinationRect) == false)
@@ -112,14 +126,14 @@ void GameLevel::render(float camXOffset, float camYOffset) {
 		b2Vec2 entityPos = entity.entityBody->GetPosition();
 
 		// Creating a rectangle for the tiles destination on the screen. Since we have a camera, we need to subtract the camera offset to give a scrolling effect
-		SDL_Rect destinationRect = { ((entityPos.x - 0.5) * 32 - camXOffset), (SCREEN_HEIGHT - ((entityPos.y + 0.5) * 32) - camYOffset), 32, 32 };
+		SDL_Rect destinationRect = { (int)((entityPos.x - 0.5) * tileSize - camXOffset), (int)(SCREEN_HEIGHT - ((entityPos.y + 0.5) * tileSize) - camYOffset), tileSize, tileSize };
 
 		// We can skip rendering the tile if it is outside the camera as we wont be seeing it anyway
 		if (isTileInRect(&destinationRect) == false)
 			// Skip this tile
 			continue;
 
-		SDL_RenderCopyEx(renderer, tilesets[entity.tilesetGID].second, &entity.spriteRect, &destinationRect, (double)entity.entityBody->GetAngle() * -180.0 / 3.141592653589793, NULL, SDL_FLIP_NONE);
+		SDL_RenderCopyEx(renderer, tilesets[entity.tilesetGID].second, &entity.spriteRect, &destinationRect, (double)entity.entityBody->GetAngle() * -180.0 / b2_pi, NULL, SDL_FLIP_NONE);
 	}
 
 	for (auto platformIDPair : movingPlatforms) {
@@ -128,7 +142,7 @@ void GameLevel::render(float camXOffset, float camYOffset) {
 		b2Vec2 entityPos = platform.entityBody->GetPosition();
 
 		// Creating a rectangle for the tiles destination on the screen. Since we have a camera, we need to subtract the camera offset to give a scrolling effect
-		SDL_Rect destinationRect = { ((entityPos.x - 0.5) * 32 - camXOffset), (SCREEN_HEIGHT - ((entityPos.y + 0.5) * 32) - camYOffset), 32, 32 };
+		SDL_Rect destinationRect = { (int)((entityPos.x - 0.5) * tileSize - camXOffset), (int)(SCREEN_HEIGHT - ((entityPos.y + 0.5) * tileSize) - camYOffset), tileSize, tileSize };
 
 		// We can skip rendering the tile if it is outside the camera as we wont be seeing it anyway
 		if (isTileInRect(&destinationRect) == false) {
@@ -144,7 +158,7 @@ void GameLevel::render(float camXOffset, float camYOffset) {
 
 bool GameLevel::isTileInRect(SDL_Rect* tileRect) {
 	// Here we are comparing the borders of the tile to the window borders
-	if (tileRect->x + 32 < 0 || tileRect->x > SCREEN_WIDTH || tileRect->y + 32 < 0 || tileRect->y > SCREEN_HEIGHT) {
+	if (tileRect->x + tileSize < 0 || tileRect->x > SCREEN_WIDTH || tileRect->y + tileSize < 0 || tileRect->y > SCREEN_HEIGHT) {
 		// If the sides of the tile are outside the window's sides, then this tile must be outside of the window (obviously)
 		return false;
 	}

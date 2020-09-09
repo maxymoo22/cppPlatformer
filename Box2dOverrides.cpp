@@ -24,9 +24,10 @@ void CollisionListener::clear() {
 }
 
 void CollisionListener::BeginContact(b2Contact* contact) {
-	// Store the type of fixture. There are 8 possible values defined in Box2dOverrides.h
-	int fixtureAData = (int)contact->GetFixtureA()->GetUserData();
-	int fixtureBData = (int)contact->GetFixtureB()->GetUserData();
+	// Store the type of fixture. There are 8 possible values defined in Box2dOverrides.h Need to do a cast to (size_t) because of issues with
+	// the building in android studio. See https://stackoverflow.com/a/27044460/10018988
+	int fixtureAData = (int)(size_t)contact->GetFixtureA()->GetUserData();
+	int fixtureBData = (int)(size_t)contact->GetFixtureB()->GetUserData();
 
 	// We need to know what moving platforms the player is on so we can add to the velocity. This stops the player from sliding off
 	if (fixtureAData == PLAYER_SENSOR && fixtureBData == MOVING_PLATFORM)
@@ -81,9 +82,10 @@ void CollisionListener::BeginContact(b2Contact* contact) {
 }
 
 void CollisionListener::EndContact(b2Contact* contact) {
-	// Store the type of fixture. There are 8 possible values defined in Box2dOverrides.h
-	int fixtureAData = (int)contact->GetFixtureA()->GetUserData();
-	int fixtureBData = (int)contact->GetFixtureB()->GetUserData();
+	// Store the type of fixture. There are 8 possible values defined in Box2dOverrides.h Need to do a cast to (size_t) because of issues with
+	// the building in android studio. See https://stackoverflow.com/a/27044460/10018988
+	int fixtureAData = (int)(size_t)contact->GetFixtureA()->GetUserData();
+	int fixtureBData = (int)(size_t)contact->GetFixtureB()->GetUserData();
 
 	// We need to know what moving platforms the player is on so we can add to the velocity. This stops the player from sliding off
 	if (fixtureAData == PLAYER_SENSOR && fixtureBData == MOVING_PLATFORM)
@@ -130,9 +132,10 @@ void CollisionListener::EndContact(b2Contact* contact) {
 
 Box2dDraw::Box2dDraw() {}
 
-Box2dDraw::Box2dDraw(SDL_Renderer* ren, int screenHeight) {
+Box2dDraw::Box2dDraw(SDL_Renderer* ren, int screenHeight, int tileSize) {
 	renderer = ren;
 	SCREEN_HEIGHT = screenHeight;
+	TILE_SIZE = tileSize;
 	camXOffset = 0;
 	camYOffset = 0;
 
@@ -149,18 +152,18 @@ void Box2dDraw::DrawPolygon(const b2Vec2* vertices, int32 vertexCount, const b2C
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, color.a);
 
 	for (int i = 0; i < vertexCount - 1; i++) {
-		SDL_RenderDrawLine(renderer, vertices[i].x * 32 - camXOffset, SCREEN_HEIGHT - (vertices[i].y * 32) - camYOffset, vertices[i + 1].x * 32 - camXOffset, SCREEN_HEIGHT - (vertices[i + 1].y * 32) - camYOffset);
+		SDL_RenderDrawLine(renderer, vertices[i].x * TILE_SIZE - camXOffset, SCREEN_HEIGHT - (vertices[i].y * TILE_SIZE) - camYOffset, vertices[i + 1].x * TILE_SIZE - camXOffset, SCREEN_HEIGHT - (vertices[i + 1].y * TILE_SIZE) - camYOffset);
 	}
-	SDL_RenderDrawLine(renderer, vertices[vertexCount - 1].x * 32 - camXOffset, SCREEN_HEIGHT - (vertices[vertexCount - 1].y * 32) - camYOffset, vertices[0].x * 32 - camXOffset, SCREEN_HEIGHT - (vertices[0].y * 32) - camYOffset);
+	SDL_RenderDrawLine(renderer, vertices[vertexCount - 1].x * TILE_SIZE - camXOffset, SCREEN_HEIGHT - (vertices[vertexCount - 1].y * TILE_SIZE) - camYOffset, vertices[0].x * TILE_SIZE - camXOffset, SCREEN_HEIGHT - (vertices[0].y * TILE_SIZE) - camYOffset);
 }
 
 void Box2dDraw::DrawSolidPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color) {
 	//SDL_SetRenderDrawColor(renderer, rand() % 256, rand() % 256, rand() % 256, color.a);
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, color.a);
 	for (int i = 0; i < vertexCount - 1; i++) {
-		SDL_RenderDrawLine(renderer, vertices[i].x * 32 - camXOffset, SCREEN_HEIGHT - (vertices[i].y * 32) - camYOffset, vertices[i + 1].x * 32 - camXOffset, SCREEN_HEIGHT - (vertices[i + 1].y * 32) - camYOffset);
+		SDL_RenderDrawLine(renderer, vertices[i].x * TILE_SIZE - camXOffset, SCREEN_HEIGHT - (vertices[i].y * TILE_SIZE) - camYOffset, vertices[i + 1].x * TILE_SIZE - camXOffset, SCREEN_HEIGHT - (vertices[i + 1].y * TILE_SIZE) - camYOffset);
 	}
-	SDL_RenderDrawLine(renderer, vertices[vertexCount - 1].x * 32 - camXOffset, SCREEN_HEIGHT - (vertices[vertexCount - 1].y * 32) - camYOffset, vertices[0].x * 32 - camXOffset, SCREEN_HEIGHT - (vertices[0].y * 32) - camYOffset);
+	SDL_RenderDrawLine(renderer, vertices[vertexCount - 1].x * TILE_SIZE - camXOffset, SCREEN_HEIGHT - (vertices[vertexCount - 1].y * TILE_SIZE) - camYOffset, vertices[0].x * TILE_SIZE - camXOffset, SCREEN_HEIGHT - (vertices[0].y * TILE_SIZE) - camYOffset);
 
 	/*Sint16* xVertices = new Sint16[vertexCount];
 	Sint16* yVertices = new Sint16[vertexCount];
@@ -189,7 +192,7 @@ void Box2dDraw::DrawSolidCircle(const b2Vec2& center, float radius, const b2Vec2
 void Box2dDraw::DrawSegment(const b2Vec2& p1, const b2Vec2& p2, const b2Color& color) {
 	//SDL_SetRenderDrawColor(renderer, rand() % 256, rand() % 256, rand() % 256, color.a);
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, color.a);
-	SDL_RenderDrawLine(renderer, p1.x * 32 - camXOffset, SCREEN_HEIGHT - (p1.y * 32) - camYOffset, p2.x * 32 - camXOffset, SCREEN_HEIGHT - (p2.y * 32) - camYOffset);
+	SDL_RenderDrawLine(renderer, p1.x * TILE_SIZE - camXOffset, SCREEN_HEIGHT - (p1.y * TILE_SIZE) - camYOffset, p2.x * TILE_SIZE - camXOffset, SCREEN_HEIGHT - (p2.y * TILE_SIZE) - camYOffset);
 }
 
 void Box2dDraw::DrawTransform(const b2Transform& xf) {
@@ -200,7 +203,7 @@ void Box2dDraw::DrawTransform(const b2Transform& xf) {
 void Box2dDraw::DrawPoint(const b2Vec2& p, float size, const b2Color& color) {
 	//SDL_SetRenderDrawColor(renderer, rand() % 256, rand() % 256, rand() % 256, color.a);
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, color.a);
-	SDL_RenderDrawPoint(renderer, p.x * 32 - camXOffset, SCREEN_HEIGHT - (p.y * 32) - camYOffset);
+	SDL_RenderDrawPoint(renderer, p.x * TILE_SIZE - camXOffset, SCREEN_HEIGHT - (p.y * TILE_SIZE) - camYOffset);
 }
 
 void Box2dDraw::renderCircle(const b2Vec2& center, float radius, unsigned int sides)
@@ -225,6 +228,6 @@ void Box2dDraw::renderCircle(const b2Vec2& center, float radius, unsigned int si
 		end.y = sin(angle) * radius;
 		end = end + center;
 		angle += d_a;
-		SDL_RenderDrawLine(renderer, start.x * 32 - camXOffset, SCREEN_HEIGHT - (start.y * 32) - camYOffset, end.x * 32 - camXOffset, SCREEN_HEIGHT - (end.y * 32) - camYOffset);
+		SDL_RenderDrawLine(renderer, start.x * TILE_SIZE - camXOffset, SCREEN_HEIGHT - (start.y * TILE_SIZE) - camYOffset, end.x * TILE_SIZE - camXOffset, SCREEN_HEIGHT - (end.y * TILE_SIZE) - camYOffset);
 	}
 }

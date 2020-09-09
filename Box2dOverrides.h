@@ -63,7 +63,7 @@ private:
 class Box2dDraw : public b2Draw {
 public:
 	Box2dDraw();
-	Box2dDraw(SDL_Renderer* ren, int screenHeight);
+	Box2dDraw(SDL_Renderer* ren, int screenHeight, int tileSize);
 	void updateCameraOffset(float x, float y);
 
 	void DrawPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color);
@@ -77,6 +77,7 @@ public:
 private:
 	SDL_Renderer* renderer;
 	int SCREEN_HEIGHT;
+	int TILE_SIZE;
 	float camXOffset;
 	float camYOffset;
 
