@@ -78,7 +78,7 @@ struct MovingPlatform {
 class GameLevel {
 public:
 	GameLevel();
-	~GameLevel();
+	void destroy();
 
 	bool load(int screenWidth, int screenHeight, int tileSize, SDL_Renderer* ren, const char* filename, string mapDirectory, b2World* world);
 	void render(float camXOffset, float camYOffset);

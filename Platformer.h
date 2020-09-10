@@ -26,8 +26,8 @@
 #define PLAYER_SPRITE_BOTTOM_MARGIN (int)(0.34 * SCREEN_HEIGHT)
 #define PLAYER_SPRITE_TOP_MARGIN (int)(0.266666 * SCREEN_HEIGHT)
 
-#define MOBILE
-//#undef MOBILE
+//#define MOBILE
+#undef MOBILE
 
 using namespace std;
 

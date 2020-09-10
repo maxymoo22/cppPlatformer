@@ -32,7 +32,7 @@ bool FontHandler::loadFont(string fontIdentifier, const char* fontFilename, int 
 	TTF_SizeText(font, "G", &fhFont.width, &fhFont.height);
 
 	// Now we go through every character and get a texture from it
-	for (int i = 0; i < 68; i++) {
+	for (int i = 0; i < alphabet.length(); i++) {
 		string singularChar(1, alphabet[i]);
 
 		// FIrst, get the surface for the current character

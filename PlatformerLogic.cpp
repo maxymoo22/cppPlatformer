@@ -38,9 +38,16 @@ Platformer::~Platformer() {
 	SDL_DestroyTexture(particleTexture);
 	particleTexture = NULL;
 
-	// Destroy window and renderer
-	SDL_DestroyWindow(window);
+	// Need to destroy font textures and game levels before destroying renderer
+	delete fontHandler;
+	fontHandler = NULL;
+
+	for (int i = 0; i < 4; i++)
+		maps[i].destroy();
+
+	// Destroy window and renderer. Need to destroy renderer before window
 	SDL_DestroyRenderer(renderer);
+	SDL_DestroyWindow(window);
 	window = NULL;
 	renderer = NULL;
 
@@ -51,11 +58,7 @@ Platformer::~Platformer() {
 	physicsWorld = NULL;
 	playerBody = NULL;
 
-	delete fontHandler;
-	fontHandler = NULL;
-
-	SDL_Log("%s%d", "\nAverage FPS: ", frameCount / (SDL_GetTicks() / 1000));
-	//cout << "\nAverage FPS: " << frameCount / (SDL_GetTicks() / 1000) << endl;
+	SDL_Log("%s%lu", "\nAverage FPS: ", frameCount / (SDL_GetTicks() / 1000));
 	SDL_Delay(1000);
 
 	// Quit SDL subsystems

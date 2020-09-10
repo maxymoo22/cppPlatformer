@@ -33,6 +33,6 @@ private:
 	// The renderer pointer that is needed for creating textures and rendering them
 	SDL_Renderer* renderer = NULL;
 
-	// An alphabet (with mumbers) that we can loop through to get stuff
-	string alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ 1234567890?!-:/";
+	// An alphabet (with numbers) that we can loop through to get stuff
+	string alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ 1234567890?!-:/.";
 };

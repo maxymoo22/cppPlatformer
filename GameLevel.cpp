@@ -2,6 +2,17 @@
 
 GameLevel::GameLevel() {}
 
+void GameLevel::destroy() {
+	SDL_Log("%s", "Game level deconstructor called");
+
+	// Finally we can loop through each tileset and release the memory taken by the textures
+	for (auto tileset : tilesets) {
+		printf("Destroying tileset texture\n");
+		SDL_DestroyTexture(tileset.second.second);
+		tileset.second.second = NULL;
+	}
+}
+
 // Loads the map and its tileset. Returns false if the map couldn't be loaded
 bool GameLevel::load(int screenWidth, int screenHeight, int tileSize, SDL_Renderer* ren, const char* mapFilename, string mapDirectory, b2World* world) {
 	SCREEN_WIDTH = screenWidth;
@@ -165,17 +176,6 @@ bool GameLevel::isTileInRect(SDL_Rect* tileRect) {
 
 	// Otherwise the tile will be inside the camera, and we want to render it
 	return true;
-}
-
-GameLevel::~GameLevel() {
-	printf("Game level deconstructor called\n");
-
-	// Finally we can loop through each tileset and release the memory taken by the textures
-	for (auto tileset : tilesets) {
-		printf("Destroying tileset texture\n");
-		SDL_DestroyTexture(tileset.second.second);
-		tileset.second.second = NULL;
-	}
 }
 
 void GameLevel::createHitboxes(b2World* world) {

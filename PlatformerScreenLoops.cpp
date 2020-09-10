@@ -10,7 +10,8 @@ void Platformer::menuScreenLoop(bool pendingMouseEvent) {
 	// A rectangle we can use for rendering
 	SDL_Rect rectangle;
 
-	// Get mouse/finger position
+	//////////// Get mouse/finger position ////////////
+
 	bool userHoldingDownMouseOrFinger = false;
 
 	#ifdef MOBILE
@@ -60,54 +61,65 @@ void Platformer::menuScreenLoop(bool pendingMouseEvent) {
 		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 		SDL_RenderDrawRect(renderer, &rectangle);
 
-		#ifndef MOBILE
-		if (isPointInButton(x, y, button)) {
+		#ifdef MOBILE
+		// Loop through every active finger
+		for (auto fingerLocation : fingerLocations) {
+			// But we are only concerned about the ones that are in this button
+			if (isPointInButton(fingerLocation.second.x, fingerLocation.second.y, button)) {
+				// If a finger is being released and it's this finger, then this button is being pressed
+				if (pendingMouseEvent == true && eventHandler.tfinger.fingerId == fingerLocation.first) {
 		#else
-		if(arePointsInButton(fingerLocations, button)) {
+			if (isPointInButton(x, y, button)) {
+				if (pendingMouseEvent == true) {
 		#endif
+					// Now we need to loop through all of the actions. UGGGGGGGH
+					if (button.text == "Yes")
+						yesButton();
+					else if (button.text == "No")
+						noButton();
 
-			if (pendingMouseEvent == true) {
-				// Now we need to loop through all of the actions. UGGGGGGGH
-				if (button.text == "Yes")
-					yesButton();
-				else if (button.text == "No")
-					noButton();
-
-				else if (!displayAreYouSure) {
-					if (button.text == "Play")
-						playButton();
-					else if (button.text == "Exit to\ndesktop")
-						exitButton();
-					else if (button.text == "Credits")
-						currentScreenType = screenTypes::CREDITS;
-					else if (button.text == "Your\nmission")
-						currentScreenType = screenTypes::INSTRUCTIONS;
-					else if (button.text == "Mute")
-						muteButton();
-					else if (button.text == "Unmute")
-						unmuteButton();
-					else if (button.text == "Select\nlevel")
-						levelSelectButton();
+					else if (!displayAreYouSure) {
+						if (button.text == "Play")
+							playButton();
+						else if (button.text == "Exit to\ndesktop")
+							exitButton();
+						else if (button.text == "Credits")
+							currentScreenType = screenTypes::CREDITS;
+						else if (button.text == "Your\nmission")
+							currentScreenType = screenTypes::INSTRUCTIONS;
+						else if (button.text == "Mute")
+							muteButton();
+						else if (button.text == "Unmute")
+							unmuteButton();
+						else if (button.text == "Select\nlevel")
+							levelSelectButton();
+					}
 				}
+
+				// If the button is being help down then we want to highlight the button
+				else if (userHoldingDownMouseOrFinger && !(button.text != "Yes" && button.text != "No" && displayAreYouSure == true)) {
+					SDL_SetRenderDrawColor(renderer, 245, 245, 245, 255);
+					// Adjust it so the highlighitng is a bit smaller than the button outline
+					rectangle.x += 5; rectangle.y += 5; rectangle.h -= 10; rectangle.w -= 10;
+					SDL_RenderFillRect(renderer, &rectangle);
+				}
+
 			}
 
-			// If the mouse button is down then we want to highlight the button
-			else if (userHoldingDownMouseOrFinger && !(button.text != "Yes" && button.text != "No" && displayAreYouSure == true)) {
-				SDL_SetRenderDrawColor(renderer, 245, 245, 245, 255);
-				// Adjust it so the highlighitng is a bit smaller than the button outline
-				rectangle.x += 5; rectangle.y += 5; rectangle.h -= 10; rectangle.w -= 10;
-				SDL_RenderFillRect(renderer, &rectangle);
-			}
+		#ifdef MOBILE
 		}
+		#endif
 
 		fontHandler->renderFont("button_font", button.text, button.x + button.width / 2, button.y + button.height / 2);
 	}
 
+	#ifdef MOBILE
 	if (pendingMouseEvent) {
 		// Remove this "location" from the locations since it isn't a true location. It is just a finger up event that is handled like this in a hacky way
 		// See the mouse/finger location code above for more details
 		fingerLocations.erase(eventHandler.tfinger.fingerId);
 	}
+	#endif
 
 	// Show everything on the screen
 	SDL_RenderPresent(renderer);
@@ -432,24 +444,64 @@ void Platformer::creditsScreenLoop(bool pendingMouseEvent) {
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	SDL_RenderDrawRect(renderer, &rectangle);
 
-	//Get mouse position
-	int x, y;
-	Uint32 mouseState = SDL_GetMouseState(&x, &y);
-	if (x > 20 && x < 180 && y > SCREEN_HEIGHT - 75 && y < SCREEN_HEIGHT - 25) {
-		if (pendingMouseEvent == true)
-			currentScreenType = screenTypes::MAIN_MENU;
+	// Get mouse/finger position
+	bool userHoldingDownMouseOrFinger = false;
 
-		// If the mouse button is down then we want to highlight the button
-		else if (mouseState & SDL_BUTTON(SDL_BUTTON_LEFT)) {
-			SDL_SetRenderDrawColor(renderer, 245, 245, 245, 255);
-			// Adjust it so the highlighitng is a bit smaller than the button outline
-			rectangle.x += 5; rectangle.y += 5; rectangle.h -= 10; rectangle.w -= 10;
-			SDL_RenderFillRect(renderer, &rectangle);
+	#ifdef MOBILE
+	if (!fingerLocations.empty())
+		userHoldingDownMouseOrFinger = true;
+
+	// If the user is releasing a finger then we want to store the location. This will be used by the button handling code to decide if the finger was released inside
+	// of a button. This is kind of a hacky way to do it since this technically is a finger release not a finger location, but this is the way that requires the least
+	// amount of modifications (as far as I can think of). This "location" will be removed by the same button handling code in this exact frame after it is used.
+	// This stops any other game logic from thinking that there was a true finger location/finger down event.
+	if (pendingMouseEvent == true)
+		fingerLocations.insert(make_pair(eventHandler.tfinger.fingerId, b2Vec2(eventHandler.tfinger.x * SCREEN_WIDTH, eventHandler.tfinger.y * SCREEN_HEIGHT)));
+	#else
+	int x, y = -1;
+	Uint32 mouseState = SDL_GetMouseState(&x, &y);
+	if (mouseState & SDL_BUTTON(SDL_BUTTON_LEFT))
+		userHoldingDownMouseOrFinger = true;
+	#endif
+
+	Button button = Button("Main menu", 20, SCREEN_HEIGHT - 75, 160, 50);
+
+	#ifdef MOBILE
+	// Loop through every active finger
+	for (auto fingerLocation : fingerLocations) {
+		// But we are only concerned about the ones that are in this button
+		if (isPointInButton(fingerLocation.second.x, fingerLocation.second.y, button)) {
+			// If a finger is being released and it's this finger, then this button is being pressed
+			if (pendingMouseEvent == true && eventHandler.tfinger.fingerId == fingerLocation.first)
+	#else
+		if (isPointInButton(x, y, button)) {
+			if (pendingMouseEvent == true)
+	#endif
+				currentScreenType = screenTypes::MAIN_MENU;
+
+			// If the mouse button is down then we want to highlight the button
+			else if (userHoldingDownMouseOrFinger) {
+				SDL_SetRenderDrawColor(renderer, 245, 245, 245, 255);
+				// Adjust it so the highlighitng is a bit smaller than the button outline
+				rectangle.x += 5; rectangle.y += 5; rectangle.h -= 10; rectangle.w -= 10;
+				SDL_RenderFillRect(renderer, &rectangle);
+			}
 		}
+
+	#ifdef MOBILE
 	}
+	#endif
 
 	fontHandler->renderFont("button_font", "Main menu", 100, SCREEN_HEIGHT - 50);
 	SDL_RenderPresent(renderer);
+
+	#ifdef MOBILE
+	if (pendingMouseEvent) {
+		// Remove this "location" from the locations since it isn't a true location. It is just a finger up event that is handled like this in a hacky way
+		// See the mouse/finger location code above for more details
+		fingerLocations.erase(eventHandler.tfinger.fingerId);
+	}
+	#endif
 }
 
 // How to play
@@ -475,21 +527,59 @@ good luck!", SCREEN_WIDTH / 2, 350);
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	SDL_RenderDrawRect(renderer, &rectangle);
 
-	//Get mouse position
-	int x, y;
-	Uint32 mouseState = SDL_GetMouseState(&x, &y);
-	if (x > 20 && x < 180 && y > SCREEN_HEIGHT - 75 && y < SCREEN_HEIGHT - 25) {
-		if (pendingMouseEvent == true)
-			currentScreenType = screenTypes::MAIN_MENU;
+	// Get mouse/finger position
+	bool userHoldingDownMouseOrFinger = false;
 
-		// If the mouse button is down then we want to highlight the button
-		else if (mouseState & SDL_BUTTON(SDL_BUTTON_LEFT)) {
-			SDL_SetRenderDrawColor(renderer, 245, 245, 245, 255);
-			// Adjust it so the highlighitng is a bit smaller than the button outline
-			rectangle.x += 5; rectangle.y += 5; rectangle.h -= 10; rectangle.w -= 10;
-			SDL_RenderFillRect(renderer, &rectangle);
+	#ifdef MOBILE
+	if (!fingerLocations.empty())
+		userHoldingDownMouseOrFinger = true;
+
+	// If the user is releasing a finger then we want to store the location. This will be used by the button handling code to decide if the finger was released inside
+	// of a button. This is kind of a hacky way to do it since this technically is a finger release not a finger location, but this is the way that requires the least
+	// amount of modifications (as far as I can think of). This "location" will be removed by the same button handling code in this exact frame after it is used.
+	// This stops any other game logic from thinking that there was a true finger location/finger down event.
+	if (pendingMouseEvent == true)
+		fingerLocations.insert(make_pair(eventHandler.tfinger.fingerId, b2Vec2(eventHandler.tfinger.x * SCREEN_WIDTH, eventHandler.tfinger.y * SCREEN_HEIGHT)));
+	#else
+	int x, y = -1;
+	Uint32 mouseState = SDL_GetMouseState(&x, &y);
+	if (mouseState & SDL_BUTTON(SDL_BUTTON_LEFT))
+		userHoldingDownMouseOrFinger = true;
+	#endif
+
+	Button button = Button("Main menu", 20, SCREEN_HEIGHT - 75, 160, 50);
+
+	#ifdef MOBILE
+	// Loop through every active finger
+	for (auto fingerLocation : fingerLocations) {
+		// But we are only concerned about the ones that are in this button
+		if (isPointInButton(fingerLocation.second.x, fingerLocation.second.y, button)) {
+			// If a finger is being released and it's this finger, then this button is being pressed
+			if (pendingMouseEvent == true && eventHandler.tfinger.fingerId == fingerLocation.first)
+	#else
+		if (isPointInButton(x, y, button)) {
+			if (pendingMouseEvent == true)
+	#endif
+				currentScreenType = screenTypes::MAIN_MENU;
+
+			// If the mouse button is down then we want to highlight the button
+			else if (userHoldingDownMouseOrFinger) {
+				SDL_SetRenderDrawColor(renderer, 245, 245, 245, 255);
+				// Adjust it so the highlighitng is a bit smaller than the button outline
+				rectangle.x += 5; rectangle.y += 5; rectangle.h -= 10; rectangle.w -= 10;
+				SDL_RenderFillRect(renderer, &rectangle);
+			}
 		}
+
+	#ifdef MOBILE
 	}
+
+	if (pendingMouseEvent) {
+		// Remove this "location" from the locations since it isn't a true location. It is just a finger up event that is handled like this in a hacky way
+		// See the mouse/finger location code above for more details
+		fingerLocations.erase(eventHandler.tfinger.fingerId);
+	}
+	#endif
 
 	fontHandler->renderFont("button_font", "Main menu", 100, SCREEN_HEIGHT - 50);
 
