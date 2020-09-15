@@ -338,3 +338,6 @@ ASALocalRun/
 
 # BeatPulse healthcheck temp database
 healthchecksdb
+
+# This is the old version of box2d where chain shapes were double sided
+/external_libraries/box2dOriginal

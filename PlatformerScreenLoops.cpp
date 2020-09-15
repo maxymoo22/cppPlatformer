@@ -127,7 +127,7 @@ void Platformer::menuScreenLoop(bool pendingMouseEvent) {
 
 // The main loop for the screen where users actually play the game
 void Platformer::gameScreenLoop(bool pendingMouseEvent, bool pendingKeyEvent) {
-	if(!muted)
+	if (!muted)
 		audioHandler.checkForTrackEnd();
 
 	// This byte will hold the movement states for the current loop. Each bit will correspond to a movement type/thing. If the bit is set to 1, then the user
@@ -140,14 +140,52 @@ void Platformer::gameScreenLoop(bool pendingMouseEvent, bool pendingKeyEvent) {
 	// bit 6: enter level
 	Uint8 keyStateByte = 0;
 
+	bool userHoldingDownMouseOrFinger = false;
+
 	#ifdef MOBILE
-	// Handle mobile button presses
+
+	if (!fingerLocations.empty())
+		userHoldingDownMouseOrFinger = true;
+
+	// For every control button we just set the corresponding bit to 1
+
+	// This is the up button
+	if (arePointsInButton(Button("", SCREEN_WIDTH - (int)(TILE_SIZE * 1.875), SCREEN_HEIGHT - (int)(TILE_SIZE * 3.75), (int)(TILE_SIZE * 1.25), (int)(TILE_SIZE * 1.25))))
+		keyStateByte |= 1;
+	// Down
+	if (arePointsInButton(Button("", SCREEN_WIDTH - (int)(TILE_SIZE * 1.875), SCREEN_HEIGHT - (int)(TILE_SIZE * 1.875), (int)(TILE_SIZE * 1.25), (int)(TILE_SIZE * 1.25))))
+		keyStateByte |= 2;
+	// Left
+	if (arePointsInButton(Button("", (int)(TILE_SIZE * 0.625), SCREEN_HEIGHT - (int)(TILE_SIZE * 1.875), (int)(TILE_SIZE * 1.25), (int)(TILE_SIZE * 1.25))))
+		keyStateByte |= 4;
+	// Right
+	if (arePointsInButton(Button("", (int)(TILE_SIZE * 2.5), SCREEN_HEIGHT - (int)(TILE_SIZE * 1.875), (int)(TILE_SIZE * 1.25), (int)(TILE_SIZE * 1.25))))
+		keyStateByte |= 8;
+	// Pause
+	if (pendingMouseEvent && isPointInButton(eventHandler.tfinger.x * SCREEN_WIDTH, eventHandler.tfinger.y * SCREEN_HEIGHT, Button("", SCREEN_WIDTH - (int)(TILE_SIZE * 1.5), (int)(TILE_SIZE * 0.5), TILE_SIZE, TILE_SIZE)))
+		keyStateByte |= 16;
+	// Select level
+	if (currentLevel == 0 && pendingMouseEvent && isPointInButton(eventHandler.tfinger.x * SCREEN_WIDTH, eventHandler.tfinger.y * SCREEN_HEIGHT, Button("", SCREEN_WIDTH - (int)(TILE_SIZE * 3.375), SCREEN_HEIGHT - (int)(TILE_SIZE * 2.8125), (int)(TILE_SIZE * 1.25), (int)(TILE_SIZE * 1.25))))
+		keyStateByte |= 32;
+
+	// If the user is releasing a finger then we want to store the location. This will be used by the button handling code to decide if the finger was released inside
+	// of a button. This is kind of a hacky way to do it since this technically is a finger release not a finger location, but this is the way that requires the least
+	// amount of modifications (as far as I can think of). This "location" will be removed by the same button handling code in this exact frame after it is used.
+	// This stops any other game logic from thinking that there was a true finger location/finger down event.
+	if (pendingMouseEvent == true)
+		fingerLocations.insert(make_pair(eventHandler.tfinger.fingerId, b2Vec2(eventHandler.tfinger.x * SCREEN_WIDTH, eventHandler.tfinger.y * SCREEN_HEIGHT)));
+
 	#else
+
+	int x, y;
+	Uint32 mouseState = SDL_GetMouseState(&x, &y);
+
 	const Uint8* keyStates = SDL_GetKeyboardState(NULL);
 
 	// The escape key pauses and resumes the game
-	if (keyStates[SDL_SCANCODE_ESCAPE] && pendingKeyEvent)
+	if (keyStates[SDL_SCANCODE_ESCAPE] && pendingKeyEvent || pendingMouseEvent && isPointInButton(x, y, Button("", SCREEN_WIDTH - (int)(TILE_SIZE * 1.5), (int)(TILE_SIZE * 0.5), TILE_SIZE, TILE_SIZE)))
 		keyStateByte |= 16;
+	// For every key we just set the corresponding bit to 1
 	if (keyStates[SDL_SCANCODE_UP] || keyStates[SDL_SCANCODE_W] || keyStates[SDL_SCANCODE_SPACE])
 		keyStateByte |= 1;
 	if (keyStates[SDL_SCANCODE_DOWN] || keyStates[SDL_SCANCODE_S])
@@ -158,6 +196,7 @@ void Platformer::gameScreenLoop(bool pendingMouseEvent, bool pendingKeyEvent) {
 		keyStateByte |= 8;
 	if (keyStates[SDL_SCANCODE_RETURN])
 		keyStateByte |= 32;
+
 	#endif
 
 	if (keyStateByte & 16 && !displayAreYouSure) {
@@ -173,24 +212,27 @@ void Platformer::gameScreenLoop(bool pendingMouseEvent, bool pendingKeyEvent) {
 
 	// Draw the level
 	maps[currentLevel].render(camXOffset, camYOffset);
-	
+
+	SDL_Rect rectangle;
+	SDL_Rect sourceRect;
+
 	if (!playerDead) {
 		b2Vec2 playerPosVector = playerBody->GetPosition();
 		//  We need to take the camera offset into account
-		SDL_Rect playerRect = { (int)((playerPosVector.x - 0.5) * TILE_SIZE - camXOffset), (int)(SCREEN_HEIGHT - ((playerPosVector.y + 0.5) * TILE_SIZE) - camYOffset), TILE_SIZE, TILE_SIZE };
-		SDL_Rect sourceRect = { playerTextureXOffset, 0, 32, 32 };
+		rectangle = { (int)((playerPosVector.x - 0.5) * TILE_SIZE - camXOffset), (int)(SCREEN_HEIGHT - ((playerPosVector.y + 0.5) * TILE_SIZE) - camYOffset), TILE_SIZE, TILE_SIZE };
+		sourceRect = { playerTextureXOffset, 0, 32, 32 };
 		// Draw the player sprite at its position.
-		SDL_RenderCopyEx(renderer, player, &sourceRect, &playerRect, 0, NULL, (playerDirection) ? SDL_RendererFlip::SDL_FLIP_NONE : SDL_RendererFlip::SDL_FLIP_HORIZONTAL);
+		SDL_RenderCopyEx(renderer, player, &sourceRect, &rectangle, 0, NULL, (playerDirection) ? SDL_RendererFlip::SDL_FLIP_NONE : SDL_RendererFlip::SDL_FLIP_HORIZONTAL);
 	}
 	// If the player is dead then we want to render the death particles
 	else {
 		int particleSize = TILE_SIZE / 4;
 		for (auto& deathParticle : deathParticles) {
 			b2Vec2 p = deathParticle.body->GetPosition();
-			SDL_Rect sourceRect = {(deathParticle.colorIndex % 4) * particleSize, (deathParticle.colorIndex % 4) * particleSize, particleSize, particleSize };
-			SDL_Rect destRect = {(int)((p.x - 1.0/8.0) * TILE_SIZE - camXOffset), (int)(SCREEN_HEIGHT - ((p.y + 1.0/8.0) * TILE_SIZE) - camYOffset), particleSize, particleSize };
+			sourceRect = { (deathParticle.colorIndex % 4) * 8, (deathParticle.colorIndex % 4) * 8, 8, 8 };
+			rectangle = { (int)((p.x - 1.0 / 8.0) * TILE_SIZE - camXOffset), (int)(SCREEN_HEIGHT - ((p.y + 1.0 / 8.0) * TILE_SIZE) - camYOffset), particleSize, particleSize };
 
-			SDL_RenderCopyEx(renderer, particleTexture, &sourceRect, &destRect, (double)deathParticle.body->GetAngle() * -180.0 / b2_pi, NULL, SDL_FLIP_NONE);
+			SDL_RenderCopyEx(renderer, particleTexture, &sourceRect, &rectangle, (double)deathParticle.body->GetAngle() * -180.0 / b2_pi, NULL, SDL_FLIP_NONE);
 		}
 	}
 
@@ -200,8 +242,36 @@ void Platformer::gameScreenLoop(bool pendingMouseEvent, bool pendingKeyEvent) {
 		physicsWorld->DebugDraw();
 	}
 
+	// If the user is playing on mobile, then we want to draw the controls
+	#ifdef MOBILE
+	// Render left and right controls
+	for (uint8 i = 0; i < 2; i++) {
+		rectangle = { (int)(TILE_SIZE * (i * 1.875 + 0.625)), SCREEN_HEIGHT - (int)(TILE_SIZE * 1.875), (int)(TILE_SIZE * 1.25), (int)(TILE_SIZE * 1.25) };
+		sourceRect = { i * 80, 0, 80, 80 };
+		SDL_RenderCopy(renderer, controlsSpritesheet, &sourceRect, &rectangle);
+	}
+
+	// Render up and down controls
+	for (uint8 i = 0; i < 2; i++) {
+		rectangle = { SCREEN_WIDTH - (int)(TILE_SIZE * 1.875), SCREEN_HEIGHT - (int)(TILE_SIZE * (i * 1.875 + 1.875)), (int)(TILE_SIZE * 1.25), (int)(TILE_SIZE * 1.25) };
+		sourceRect = { i * 80 + 160, 0, 80, 80 };
+		SDL_RenderCopy(renderer, controlsSpritesheet, &sourceRect, &rectangle);
+	}
+
+	// Render enter level button if we are on the level selection screen
+	if (currentLevel == 0) {
+		rectangle = { SCREEN_WIDTH - (int)(TILE_SIZE * 3.375), SCREEN_HEIGHT - (int)(TILE_SIZE * 2.8125), (int)(TILE_SIZE * 1.25), (int)(TILE_SIZE * 1.25) };
+		sourceRect = { 320, 0, 80, 80 };
+		SDL_RenderCopy(renderer, controlsSpritesheet, &sourceRect, &rectangle);
+	}
+	#endif
+
+	// Render pause button
+	rectangle = { SCREEN_WIDTH - (int)(TILE_SIZE * 1.5), (int)(TILE_SIZE * 0.5), TILE_SIZE, TILE_SIZE };
+	sourceRect = { 400, 0, 48, 48 };
+	SDL_RenderCopy(renderer, controlsSpritesheet, &sourceRect, &rectangle);
+
 	vector<Button> buttons;
-	SDL_Rect rectangle;
 
 	// If it's true, then we need to draw the popup. Users can confirm they want to exit or restart and that they didn't press the button by accident
 	if (displayAreYouSure == true) {
@@ -251,53 +321,71 @@ void Platformer::gameScreenLoop(bool pendingMouseEvent, bool pendingKeyEvent) {
 					Button("Main menu", SCREEN_WIDTH / 2 + 10, SCREEN_HEIGHT / 4 + 15, 160, 50) };
 	}
 
-	// Mouse position
-	int x, y;
-	Uint32 mouseState = SDL_GetMouseState(&x, &y);
-
-	for (auto& button : buttons) {
+	for (Button button : buttons) {
 		rectangle = { button.x, button.y, button.width, button.height };
 		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 		SDL_RenderDrawRect(renderer, &rectangle);
 
-		if (isPointInButton(x, y, button)) {
-			if (pendingMouseEvent == true) {
-				if (button.text == "Resume")
-					resumeButton();
-				else if (button.text == "Restart\nlevel")
-					restartLevelButton();
-				else if (button.text == "Main menu") {
-					displayAreYouSure_Reason = 2;
+		#ifdef MOBILE
+		// Loop through every active finger
+		for (auto fingerLocation : fingerLocations) {
+			// But we are only concerned about the ones that are in this button
+			if (isPointInButton(fingerLocation.second.x, fingerLocation.second.y, button)) {
+				// If a finger is being released and it's this finger, then this button is being pressed
+				if (pendingMouseEvent == true && eventHandler.tfinger.fingerId == fingerLocation.first) {
+		#else
+			if (isPointInButton(x, y, button)) {
+				if (pendingMouseEvent == true) {
+		#endif
 
-					// If the player is dead then we dont need to display the are you sure popup
-					if (playerDead == true)
+					if (button.text == "Resume")
+						resumeButton();
+					else if (button.text == "Restart\nlevel")
+						restartLevelButton();
+					else if (button.text == "Main menu") {
+						displayAreYouSure_Reason = 2;
+
+						// If the player is dead then we dont need to display the are you sure popup
+						if (playerDead == true)
+							yesButton();
+						else
+							displayAreYouSure = true;
+					}
+					else if (button.text == "Mute")
+						muteButton();
+					else if (button.text == "Unmute")
+						unmuteButton();
+					else if (button.text == "Yes")
 						yesButton();
-					else
-						displayAreYouSure = true;
+					else if (button.text == "No")
+						noButton();
+					else if (button.text == "Respawn")
+						respawnButton();
 				}
-				else if (button.text == "Mute")
-					muteButton();
-				else if (button.text == "Unmute")
-					unmuteButton();
-				else if (button.text == "Yes")
-					yesButton();
-				else if (button.text == "No")
-					noButton();
-				else if (button.text == "Respawn")
-					respawnButton();
+
+				// If the mouse button is down then we want to highlight the button
+				else if (userHoldingDownMouseOrFinger) {
+					SDL_SetRenderDrawColor(renderer, 245, 245, 245, 255);
+					// Adjust it so the highlighitng is a bit smaller than the button outline
+					rectangle.x += 5; rectangle.y += 5; rectangle.h -= 10; rectangle.w -= 10;
+					SDL_RenderFillRect(renderer, &rectangle);
+				}
 			}
 
-			// If the mouse button is down then we want to highlight the button
-			else if (mouseState & SDL_BUTTON(SDL_BUTTON_LEFT)) {
-				SDL_SetRenderDrawColor(renderer, 245, 245, 245, 255);
-				// Adjust it so the highlighitng is a bit smaller than the button outline
-				rectangle.x += 5; rectangle.y += 5; rectangle.h -= 10; rectangle.w -= 10;
-				SDL_RenderFillRect(renderer, &rectangle);
-			}
+		#ifdef MOBILE
 		}
+		#endif
 
 		fontHandler->renderFont("button_font", button.text, button.x + button.width / 2, button.y + button.height / 2);
 	}
+
+	#ifdef MOBILE
+	if (pendingMouseEvent) {
+		// Remove this "location" from the locations since it isn't a true location. It is just a finger up event that is handled like this in a hacky way
+		// See the mouse/finger location code above for more details
+		fingerLocations.erase(eventHandler.tfinger.fingerId);
+	}
+	#endif
 
 	// Render everything to the screen
 	SDL_RenderPresent(renderer);
@@ -307,7 +395,7 @@ void Platformer::gameScreenLoop(bool pendingMouseEvent, bool pendingKeyEvent) {
 
 	if (playerDead) {
 		// Step the physics forwards
-		physicsWorld->Step(1.0 / 80.0, 8, 3);
+		physicsWorld->Step(1.0 / (float)REFRESH_RATE, 8, 3);
 		return;
 	}
 
@@ -348,7 +436,7 @@ void Platformer::gameScreenLoop(bool pendingMouseEvent, bool pendingKeyEvent) {
 	playerBody->ApplyLinearImpulseToCenter(leftRightImpulse, true);
 
 	// Once we have moved the player, we can move any entities under the player based on how the player moved
-	b2Vec2 locationOfImpulseInWorldCoords = playerBody->GetWorldPoint(b2Vec2(0, -0.6));
+	b2Vec2 locationOfImpulseInWorldCoords = playerBody->GetWorldPoint(b2Vec2(0, -0.55));
 	for (auto& underfootFixture : collisionListener->entityFixturesUnderfoot)
 		underfootFixture->GetBody()->ApplyLinearImpulse(b2Vec2(-1 * leftRightImpulse.x / 13, 0), locationOfImpulseInWorldCoords, true);
 
@@ -369,7 +457,7 @@ void Platformer::gameScreenLoop(bool pendingMouseEvent, bool pendingKeyEvent) {
 	}
 
 	// Step the physics forwards
-	physicsWorld->Step(1.0 / 80.0, 8, 3);
+	physicsWorld->Step(1.0 / (float)REFRESH_RATE, 8, 3);
 
 	// Check if any map scrolling is needed
 	checkScrolling();

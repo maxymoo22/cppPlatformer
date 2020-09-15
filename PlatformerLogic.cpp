@@ -8,6 +8,7 @@ Platformer::Platformer() {
 	animationFrameIndex = 0;
 	playerDirection = 1;
 	menuSprites = NULL;
+	controlsSpritesheet = NULL;
 	currentLevel = 1;
 	fontHandler = NULL;
 	physicsWorld = NULL;
@@ -25,6 +26,7 @@ Platformer::Platformer() {
 	muted = false;
 	particleTexture = NULL;
 	TILE_SIZE = 0;
+	REFRESH_RATE = 0;
 }
 
 // Free memory
@@ -37,6 +39,8 @@ Platformer::~Platformer() {
 	menuSprites = NULL;
 	SDL_DestroyTexture(particleTexture);
 	particleTexture = NULL;
+	SDL_DestroyTexture(controlsSpritesheet);
+	controlsSpritesheet = NULL;
 
 	// Need to destroy font textures and game levels before destroying renderer
 	delete fontHandler;
@@ -83,6 +87,8 @@ bool Platformer::init() {
 
 	SDL_DisplayMode DM;
 	SDL_GetCurrentDisplayMode(0, &DM);
+	REFRESH_RATE = 65; //REFRESH_RATE = DM.refresh_rate;
+	SDL_Log("Using a refresh rate of %d", REFRESH_RATE);
 
 	// Create window
 	window = SDL_CreateWindow("Platformer", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT,/*DM.w, DM.h,*/ SDL_WINDOW_SHOWN);
@@ -171,6 +177,7 @@ bool Platformer::loadAssets() {
 
 	menuSprites = loadTexture("resources/menuSpritesheet.png");
 	particleTexture = loadTexture("resources/particles.png");
+	controlsSpritesheet = loadTexture("resources/controlsSpritesheet.png");
 
 	for (int i = 0; i < 4; i++) {
 		string mapName = "resources/maps/level " + to_string(i) + ".tmx";
@@ -210,6 +217,8 @@ void Platformer::loop() {
 
 	// Keep looping until the user quits the game
 	while (quit == false) {
+		Uint64 startTime = SDL_GetPerformanceCounter();
+
 		frameCount++;
 
 		bool pendingMouseEvent = false;
@@ -294,6 +303,18 @@ void Platformer::loop() {
 			instructionsScreenLoop(pendingMouseEvent);
 			break;
 		}
+
+		Uint64 endTime = SDL_GetPerformanceCounter();
+		float elapsedTime = (float)(endTime - startTime) / (float)SDL_GetPerformanceFrequency();
+		while (elapsedTime < 1.0 / (float)REFRESH_RATE) {
+			float sleepingTime = (1.0 / (float)REFRESH_RATE - elapsedTime) * 1000.0;
+			if (sleepingTime > 0) SDL_Delay((Uint32)sleepingTime);
+
+			// Update the elapsed time. This is because the delay function cant go less than 1 ms. For example, if there is 1.75 ms until the next tick,
+			// We will sleep for 1 ms but there will still be that 0.75 left over. For that, we just spin in the while loop
+			endTime = SDL_GetPerformanceCounter();
+			elapsedTime = (float)(endTime - startTime) / (float)SDL_GetPerformanceFrequency();
+		}
 	}
 
 	// If the music isn't stopped before exiting SDL_mixer seems to crash
@@ -339,7 +360,7 @@ void Platformer::updatePlayerAnimation(bool movingSideways, bool movingVertical)
 		}
 		else {
 			playerTextureXOffset = 32 * ((int)animationFrameIndex % 3) + 96;
-			animationFrameIndex += 1.0/10.0;
+			animationFrameIndex += 1.0 / ((float)REFRESH_RATE / 8.0);
 			if (animationFrameIndex >= 3) animationFrameIndex = 0.0;
 		}
 	}
@@ -347,7 +368,7 @@ void Platformer::updatePlayerAnimation(bool movingSideways, bool movingVertical)
 	else if (collisionListener->playerLadderContacts > 0) {
 		if (movingVertical) {
 			playerTextureXOffset = 32 * ((int)animationFrameIndex % 2);
-			animationFrameIndex += 1.0 / 10.0;
+			animationFrameIndex += 1.0 / ((float)REFRESH_RATE / 8.0);
 			if (animationFrameIndex >= 2) animationFrameIndex = 0.0;
 		}
 		else {
@@ -420,7 +441,7 @@ SDL_Texture* Platformer::loadTexture(const char* filename) {
 }
 
 // Checks if the given point is inside a button. Utility function
-bool Platformer::isPointInButton(int x, int y, Button& button) {
+bool Platformer::isPointInButton(int x, int y, const Button& button) {
 	if (x < button.x || x > button.x + button.width)
 		return false;
 	if (y < button.y || y > button.y + button.height)
@@ -430,7 +451,8 @@ bool Platformer::isPointInButton(int x, int y, Button& button) {
 }
 
 // Checks if the any of the given points are inside a button. Utility function
-bool Platformer::arePointsInButton(unordered_map<SDL_FingerID, b2Vec2> fingerLocations, Button& button) {
+bool Platformer::arePointsInButton(const Button& button) {
+	#ifdef MOBILE
 	for (auto pair : fingerLocations) {
 		b2Vec2 location = pair.second;
 
@@ -438,6 +460,7 @@ bool Platformer::arePointsInButton(unordered_map<SDL_FingerID, b2Vec2> fingerLoc
 		if (location.x > button.x && location.x < button.x + button.width && location.y > button.y && location.y < button.y + button.height)
 			return true;
 	}
+	#endif
 
 	return false;
 }

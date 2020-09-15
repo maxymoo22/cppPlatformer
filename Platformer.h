@@ -48,6 +48,7 @@ private:
 	int SCREEN_WIDTH = 1000;
 	int SCREEN_HEIGHT = 750;
 	int TILE_SIZE;
+	int REFRESH_RATE;
 
 	// The window renderer. Needed for rendering textures
 	SDL_Renderer* renderer;
@@ -64,6 +65,8 @@ private:
 	SDL_Texture* particleTexture;
 	// This texture has the sprites that are rendered on the level selection screen and the instructions screen
 	SDL_Texture* menuSprites;
+	// The texture that holds the touchscreen controls
+	SDL_Texture* controlsSpritesheet;
 
 	// All of the levels will be in this array, including the level selection level
 	GameLevel maps[4];
@@ -155,9 +158,9 @@ private:
 	void updatePlayerAnimation(bool movingSideways, bool movingVertical);
 
 	// Checks if the given point is inside a button. Utility function
-	bool isPointInButton(int x, int y, Button& button);
+	bool isPointInButton(int x, int y, const Button& button);
 	// Checks if the any of the given points are inside a button. Utility function
-	bool arePointsInButton(unordered_map<SDL_FingerID, b2Vec2> fingerLocations, Button& button);
+	bool arePointsInButton(const Button& button);
 
 	void createPhysics();
 

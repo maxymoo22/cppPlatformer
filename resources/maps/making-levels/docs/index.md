@@ -2,6 +2,10 @@
 
 Look around in here if you want to learn how to make your own levels, and with cool features.
 
+## Note to self
+
+* When creating static object outlines, with polygons, you must always specify the points anitclockwise due to the new one-sided chain shapes in box2d
+
 ## Moving platforms
 
 * Create a new polygon object. Make sure the type property is set to `mp`

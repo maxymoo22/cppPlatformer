@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.4" tiledversion="1.4.1" orientation="orthogonal" renderorder="right-down" width="40" height="20" tilewidth="32" tileheight="32" infinite="0" nextlayerid="3" nextobjectid="9">
+<map version="1.4" tiledversion="1.4.1" orientation="orthogonal" renderorder="right-down" width="40" height="20" tilewidth="32" tileheight="32" infinite="0" nextlayerid="3" nextobjectid="12">
  <properties>
   <property name="useObjectCollisions" type="bool" value="true"/>
  </properties>
@@ -15,17 +15,17 @@
   </data>
  </layer>
  <objectgroup id="2" name="collisions">
-  <object id="5" type="danger" x="480" y="608">
-   <polygon points="0,0 0,-24 12,-31 24,-31 32,-24 32,0"/>
-  </object>
   <object id="6" type="finish" x="1216" y="608">
    <polygon points="0,0 0,-64 64,-64 64,-4 60,0"/>
   </object>
   <object id="7" x="8" y="608">
    <polygon points="0,0 -8,8 -8,32 1272,32 1272,8 1264,0"/>
   </object>
-  <object id="8" x="0" y="608">
-   <polygon points="0,0 0,-160 32,-160 32,0"/>
+  <object id="10" x="0" y="608">
+   <polygon points="0,0 32,0 32,-96 0,-96"/>
+  </object>
+  <object id="11" type="danger" x="480" y="608">
+   <polygon points="0,0 32,0 32,-24 28,-28 24,-31 12,-31 8,-28 0,-24"/>
   </object>
  </objectgroup>
 </map>
