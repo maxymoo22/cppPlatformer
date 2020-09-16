@@ -321,6 +321,20 @@ void Platformer::gameScreenLoop(bool pendingMouseEvent, bool pendingKeyEvent) {
 					Button("Main menu", SCREEN_WIDTH / 2 + 10, SCREEN_HEIGHT / 4 + 15, 160, 50) };
 	}
 
+	// This will render the text that shows how to select a level
+	else if (currentLevel == 0) {
+		string instructionText = "Go through a door and press the ";
+
+		#ifdef MOBILE
+		instructionText += "key button";
+		#else
+		instructionText += "enter key";
+		#endif
+
+		instructionText += " to select a level";
+		//fontHandler->renderFont("button_font", instructionText, SCREEN_WIDTH / 2, 15);
+	}
+
 	for (Button button : buttons) {
 		rectangle = { button.x, button.y, button.width, button.height };
 		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);

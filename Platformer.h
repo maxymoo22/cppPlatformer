@@ -71,6 +71,9 @@ private:
 	// All of the levels will be in this array, including the level selection level
 	GameLevel maps[4];
 	int currentLevel;
+	// We don't want to store/save the users current level if they are on level 0, the selection level. This variable will hold the number of the level
+	// they were on before they went into the level selection level
+	int naturalLevel;
 
 	// The font handler class loads fonts and can draw them to the screen
 	FontHandler* fontHandler;

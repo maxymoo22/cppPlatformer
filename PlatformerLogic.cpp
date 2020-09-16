@@ -10,6 +10,7 @@ Platformer::Platformer() {
 	menuSprites = NULL;
 	controlsSpritesheet = NULL;
 	currentLevel = 1;
+	naturalLevel = 1;
 	fontHandler = NULL;
 	physicsWorld = NULL;
 	playerBody = NULL;
@@ -87,7 +88,7 @@ bool Platformer::init() {
 
 	SDL_DisplayMode DM;
 	SDL_GetCurrentDisplayMode(0, &DM);
-	REFRESH_RATE = 65; //REFRESH_RATE = DM.refresh_rate;
+	REFRESH_RATE = 80; //REFRESH_RATE = DM.refresh_rate;
 	SDL_Log("Using a refresh rate of %d", REFRESH_RATE);
 
 	// Create window
@@ -471,9 +472,10 @@ void Platformer::writeUserData() {
 		cout << "Couldn't open user data file. Error:\n" << SDL_GetError() << endl;
 		return;
 	}
-
-	int userData[2] = { currentLevel, (int)muted };
-	SDL_RWwrite(userDataFile, &userData, sizeof(int), 2);
+	
+	// We don't want to save level 0 into the file, so we use the previous level instead if they are currently on level selection
+	int userData[2] = { currentLevel == 0 ? naturalLevel : currentLevel, (int)muted };
+	SDL_RWwrite(userDataFile, userData, sizeof(int), 2);
 
 	SDL_RWclose(userDataFile);
 }

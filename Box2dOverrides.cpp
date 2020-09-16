@@ -41,7 +41,7 @@ void CollisionListener::BeginContact(b2Contact* contact) {
 	else if (fixtureAData == DANGEROUS_TILE && fixtureBData == PLAYER_BODY || fixtureBData == DANGEROUS_TILE && fixtureAData == PLAYER_BODY)
 		playerDangerContacts++;
 
-	// End of level
+	// Level entrances on the selection level
 	else if (fixtureAData / 1000000 == FINISH_POINT && fixtureBData == PLAYER_BODY) {
 		playerFinishPointContacts++;
 		// Store the finish point that the player is currently touching. This will be used to decide which level they go to
@@ -54,14 +54,10 @@ void CollisionListener::BeginContact(b2Contact* contact) {
 	}
 
 	// As long as it's not the player's foot sensor, if something touches a button we need to know so we can activate the platform it's linked to
-	else if (fixtureAData != PLAYER_SENSOR && fixtureBData / 1000000 == BUTTON) {
+	else if (fixtureAData != PLAYER_SENSOR && fixtureBData / 1000000 == BUTTON)
 		buttons[fixtureBData - BUTTON * 1000000]++;
-		cout << "Stepped on button\n";
-	}
-	else if (fixtureAData / 1000000 == BUTTON && fixtureBData != PLAYER_SENSOR) {
+	else if (fixtureAData / 1000000 == BUTTON && fixtureBData != PLAYER_SENSOR)
 		buttons[fixtureAData - BUTTON * 1000000]++;
-		cout << "Stepped on button\n";
-	}
 
 	// Finally, we need to know when the player is on the ground. This stops them from jumping in mid air and flying around
 	if (fixtureAData == PLAYER_SENSOR && fixtureBData != LADDER && fixtureBData != DANGEROUS_TILE && fixtureBData < 100000 ||
@@ -100,6 +96,13 @@ void CollisionListener::EndContact(b2Contact* contact) {
 		playerDangerContacts--;
 	else if (fixtureAData == FINISH_POINT && fixtureBData == PLAYER_BODY || fixtureBData == FINISH_POINT && fixtureAData == PLAYER_BODY)
 		playerFinishPointContacts--;
+
+	// Level entrances on the selection level
+	else if (fixtureAData / 1000000 == FINISH_POINT && fixtureBData == PLAYER_BODY || fixtureBData / 1000000 == FINISH_POINT && fixtureAData == PLAYER_BODY) {
+		playerFinishPointContacts--;
+		// Since the player is no longer on a level entrance, we can reset the variable
+		levelEntranceNum = -1;
+	}
 
 	// As long as it's not the player's foot sensor, if something touches a button we need to know so we can activate the platform it's linked to
 	else if (fixtureAData != PLAYER_SENSOR && fixtureBData / 1000000 == BUTTON)
